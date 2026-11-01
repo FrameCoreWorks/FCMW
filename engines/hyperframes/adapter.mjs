@@ -80,6 +80,15 @@ export default {
   },
 
   plan(film, mode, { at = '' } = {}) {
+    const steps = this.planSteps(film, mode, { at });
+    // A film written by an agent without a shell (a chat app) may import ./lib/fcwm/ without carrying it:
+    // fill it in from this FCWM install, so the hand-off folder stays small and always current.
+    const libDir = path.join(film.dir, 'lib', 'fcwm');
+    const uses = () => /lib\/fcwm\//.test(fs.readFileSync(path.join(film.dir, 'index.html'), 'utf8'));
+    return [{ label: 'add FCWM lib (lib/fcwm/) the film imports', when: () => !fs.existsSync(libDir) && uses(), fn: () => copyLib(libDir) }, ...steps];
+  },
+
+  planSteps(film, mode, { at = '' } = {}) {
     const { dir, root, renderDir, slug } = film;
     const format = film.formats[0];
     if (mode === 'check') {

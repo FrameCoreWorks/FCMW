@@ -14,7 +14,7 @@ the same layout `fcwm new` creates:
 | `film.json` | `engine`, `duration`, `fps`, `formats`, and `"fcwm": "<version>"` (the FCWM version you wrote it for) |
 | `index.html` (+ `film.js` for motion-reel) | the film |
 | `beats.json` | motion-reel: the beat grid (a steady grid is fine for a silent film) |
-| `lib/`, `assets/`, `audio/`, `fonts/` | only what the film uses; never a file from outside the folder |
+| `lib/`, `assets/`, `audio/`, `fonts/` | only what the film uses; never a file from outside the folder. A HyperFrames film may import `./lib/fcwm/*.js` (FCWM's `lib/`) without including it: FCWM adds `lib/fcwm/` at render time |
 
 Paths inside the film are relative (`assets/logo.svg`), never absolute, so the folder works wherever
 the user puts it. Nothing else goes in it: no notes for the agent, no copies of FCWM.

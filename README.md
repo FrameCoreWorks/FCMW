@@ -72,6 +72,9 @@ gemini extensions install https://github.com/FrameCoreWorks/FCWM
 Codex and Cursor read the manifests in `.codex-plugin/` and `.cursor-plugin/`; agents that only read
 `AGENTS.md` get the same instructions from the repository root.
 
+ChatGPT (Work, Business, Enterprise, Edu): import the repository as a plugin marketplace in the Admin
+console, or upload a plugin ZIP: [FCWM in ChatGPT](docs/install-chatgpt.md).
+
 ## Render a film
 
 The skills tell the agent what to run; rendering needs the full repository on your machine:
