@@ -1,7 +1,7 @@
 # film-blocks
 
 **The idea:** every everyday piece of a film (title card, scene transitions, a lower third, word-timed
-captions, an end card) built from `lib/blocks.js` in one 12-second HyperFrames film, so an agent can lift
+captions, an end card) built from `lib/blocks.js` (inside a film: `./lib/fcwm/blocks.js`) in one 12-second HyperFrames film, so an agent can lift
 any of them into a real film.
 
 Engine: HyperFrames, 16:9, 12 s, 30 fps, no GSAP, no sound. Tier: free.

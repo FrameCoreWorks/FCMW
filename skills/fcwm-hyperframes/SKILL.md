@@ -50,8 +50,11 @@ never crop.
   usually look better.
 - GSAP is optional and "restricted" (GSAP Standard licence, custom terms with a no-compete clause). Use it
   only if the user agrees after hearing that; the CLI repeats the note whenever a film loads it.
-- Fonts: put the files in `assets/` and load them with `@font-face`; a missing font must not stop the
-  render (HyperFrames times out and continues, check the log).
+- Fonts: `fcwm new` puts a neutral placeholder face (Inter, OFL) in `fonts/` as the family `Display`;
+  replace the files or add the user's own with `@font-face` (a brand kit does this for you). Never rely
+  on `system-ui` (it differs per machine) or on a web font fetched at render time (it can change or fail
+  offline). A missing font must not stop the render (HyperFrames times out and continues, check the log).
+- Charts: `lib/fcwm/chart.js` (`bars`, `niceTicks`, `countUp`, `drawOn`); the axis and labels are DOM or SVG.
 - Text stays inside the safe zone: 9x16 x 6-94 %, y 10-80 %; other formats 5 % margins.
 - The first frame is the thumbnail on social players: something meaningful is on screen at `t = 0`.
 - Sound: put a mastered track in `audio/` and add it with an `<audio>` element (see
@@ -64,3 +67,10 @@ never crop.
 and tiles one snapshot per beat into `render/contact_<format>_p1.png` and a half-size phone sheet. Score
 them as the fcwm skill's quality gate says, fix the three weakest spots, repeat until every score is 8+.
 Then `fcwm render <film>` and report the QA lines as they are.
+
+Reading the check: it exits with code 2 and writes no sheet when text overlaps or overflows; the message
+names the element by selector (give important elements an `id` so you can find them). Mark a deliberate
+overlap with `data-layout-allow-overlap` on the element. `canvas_overflow` notes during a push or slide
+transition are expected (the scenes are meant to be off canvas). Warnings that point at `motion.md` or
+`look.md` refer to HyperFrames' own docs (`npx hyperframes@<version> docs`); the same advice is in the
+`directing-motion-films` skill.

@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sheetTimes, tileSheets, byStillTime, clearSheets } from '../../scripts/lib/contact.mjs';
 import { fcwmHome } from '../../scripts/lib/setup.mjs';
+import { copyLib, copyFonts } from '../../scripts/lib/film-assets.mjs';
 
 export const HYPERFRAMES_VERSION = '0.8.226';
 export const ENV = { HYPERFRAMES_NO_TELEMETRY: '1', DO_NOT_TRACK: '1', HYPERFRAMES_SKIP_SKILLS: '1' };
@@ -16,11 +17,6 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const SIZES = { '9x16': [1080, 1920], '16x9': [1920, 1080], '1x1': [1080, 1080] };
 
 const hf = (args, cwd) => ({ cmd: 'npx', args: ['-y', `hyperframes@${HYPERFRAMES_VERSION}`, ...args], cwd, env: ENV });
-
-function copyLib(dest) {
-  const src = path.join(REPO, 'lib');
-  fs.cpSync(src, dest, { recursive: true, filter: (p) => !/[\\/](test|README\.md)$/.test(p) && !p.endsWith('README.md') });
-}
 
 export default {
   id: 'hyperframes',
@@ -59,6 +55,7 @@ export default {
         fs.writeFileSync(path.join(dir, name), text.replace(/\{\{(\w+)\}\}/g, (_, k) => String(vars[k])));
       }
       copyLib(path.join(dir, 'lib', 'fcwm'));
+      copyFonts(path.join(dir, 'fonts'));
       for (const d of ['assets', 'audio', 'docs']) fs.mkdirSync(path.join(dir, d));
       if (lottie) {
         fs.copyFileSync(source, path.join(dir, 'assets', animation));

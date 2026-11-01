@@ -4,9 +4,12 @@
 <meta charset="utf-8">
 <title>__TITLE__</title>
 <style>
-  /* Two faces only: one display, one UI. Point these at the brand's files in fonts/. */
+  /* Two faces only: one display, one UI. fcwm new puts a placeholder (Inter, OFL) in fonts/; replace the
+     files with the brand's own (or point these rules at them). The -ext files cover accented Latin. */
   @font-face { font-family: Display; src: url(fonts/display.woff2) format('woff2'), url(fonts/display.ttf) format('truetype'); font-weight: 100 900; }
+  @font-face { font-family: Display; src: url(fonts/display-ext.woff2) format('woff2'); font-weight: 100 900; unicode-range: U+0100-024F, U+1E00-1EFF; }
   @font-face { font-family: UI; src: url(fonts/ui.woff2) format('woff2'), url(fonts/ui.ttf) format('truetype'); font-weight: 100 900; }
+  @font-face { font-family: UI; src: url(fonts/ui-ext.woff2) format('woff2'); font-weight: 100 900; unicode-range: U+0100-024F, U+1E00-1EFF; }
   html, body { margin: 0; height: 100%; background: #111; overflow: hidden; }
   body { display: grid; place-items: center; }
   canvas { display: block; max-width: 100vw; max-height: 100vh; width: auto; height: auto; }

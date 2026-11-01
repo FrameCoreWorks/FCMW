@@ -49,7 +49,12 @@ with `--strip a:b:8 --name <cut>` (frames across a transition), `--range a:b` (a
 4. **Music and grid.** `uv run <engine>/scripts/beats.py <film> --track song.mp3` (or `--full` for a
    music video, or `--synth --flavor house|tabla|lofi`). A bespoke score: `<film>/audio/score.py` on top
    of `<engine>/scripts/dsp.py`, writing `music.wav` and `beats.json`; `fcwm render` runs it with
-   `MOTION_REEL_SKILL` set. Lyric videos: `references/lyrics.md`. Voice-over: `references/voiceover.md`.
+   `MOTION_REEL_SKILL` set to `<engine>` (the folder with `scripts/dsp.py`; set it yourself to run a score
+by hand). Start a score from `<repo>/templates/motion-reel-score/score.py` (a kick on every beat and a
+soft pad on the film's grid; copy it to `<film>/audio/score.py`). Lyric videos on the user's song:
+`references/lyrics.md`; a lyric clip on a synthesized score needs no transcription: put the words in
+`film.js` as `[beat, word]` pairs and land each word with a `lib/fcwm/type.js` style (timing in
+`<repo>/skills/directing-motion-films/references/lib-api.md`). Voice-over: `references/voiceover.md`.
 5. **Shot list.** Full process only: `docs/shotlist.md` on the beat grid (`references/shotlist.md`), one
    row per shot. Stop for the user's OK. Show a model sheet first if the film has a character.
 6. **Build `film.js`.** Time everything in beats (`u`). Springs: `springU`, `springKeys`, `SPRING`
@@ -58,8 +63,11 @@ with `--strip a:b:8 --name <cut>` (frames across a transition), `--range a:b` (a
    `references/3d.md`; physically based light (path traced, slow, offer it first): `--pathtrace`,
    `lib/pathtrace.js` and `references/pathtrace.md`. Grain and glitch go in `post()`, after the motion-blur average.
    List every accent in `HITS` as `[beat, label, sfx, opts]` so sound and picture share one source.
-   FCWM's tested blocks in `<repo>/lib/` (cursor paths, point-cloud morphs, cameras, dialogue timing,
-   characters) import straight into `film.js`.
+   FCWM's tested blocks are copied into the film as `lib/fcwm/` (kinetic type, transitions, captions,
+   charts, cursor paths, point-cloud morphs, cameras, dialogue timing, characters): `import { rise } from
+   './lib/fcwm/type.js'` in `film.js`. The template `film.js` is a sample scene set: replace its scenes
+   with the film's own. `fonts/` holds a placeholder face (Inter, OFL) under the names `index.html` loads
+   (`display`, `ui`); replace the files with the user's typeface.
 7. **Critique loop, at least three rounds.** `fcwm render <film> --check`, look at the contact and phone
    sheets, strips across each cut, then score with `prompts/critique-pass.txt` (in `<engine>`): hook,
    readability at phone size, motion quality, variety, brief fit, sound sync. Fix the worst three, append
