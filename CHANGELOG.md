@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.3 (2026-11-01)
 
 - Computers with nothing installed: the one-line installer puts the official Node.js 22 (nodejs.org,
   SHA-256 checked) into `~/.fcwm/node` on macOS and Linux instead of requiring Homebrew, and adds
