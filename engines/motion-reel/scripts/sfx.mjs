@@ -229,7 +229,7 @@ const ROOT = process.cwd();
 const RENDER = path.join(path.dirname(fileURLToPath(import.meta.url)), 'render.mjs');
 const r = spawnSync('node', [RENDER, '--film', film, '--hits'], { cwd: ROOT, encoding: 'utf8' });
 if (r.status !== 0) { console.error(r.stderr || r.stdout); process.exit(1); }
-const hits = JSON.parse(fs.readFileSync(path.join(ROOT, 'out', film, 'hits.json'), 'utf8'));
+const hits = JSON.parse(fs.readFileSync(path.join(process.env.MOTION_REEL_OUT || path.join(ROOT, 'out'), film, 'hits.json'), 'utf8'));
 const cfgPath = path.join(ROOT, film, 'film.json');
 const duration = fs.existsSync(cfgPath) ? Number(JSON.parse(fs.readFileSync(cfgPath, 'utf8')).duration || 15) : 15;
 

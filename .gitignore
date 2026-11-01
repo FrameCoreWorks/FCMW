@@ -11,5 +11,6 @@ out/
 # film render output
 out/
 .hyperframes/
+.fcwm/
 .env.local
 .env.*.local

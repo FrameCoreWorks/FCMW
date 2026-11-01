@@ -7,8 +7,8 @@ FCWM is an open motion graphics toolkit. An agent writes a film as code (2D, 3D 
 user's machine or GitHub Actions renders it. No AI model runs at render time: the computer replays the
 code frame by frame, so the quality of the film is the quality of the code the agent writes.
 
-> Status: 0.2.0. HyperFrames and motion-reel render end to end through `scripts/fcwm.mjs` (both
-> experimental); Manim, Blender, Lottie and the brand kit are planned. Check a directory's `README.md`
+> Status: 0.3.0. HyperFrames and motion-reel render end to end through `scripts/fcwm.mjs` (both
+> experimental), also from a one-line installer (`scripts/install.sh`, `scripts/install.ps1`); Manim, Blender, Lottie and the brand kit are planned. Check a directory's `README.md`
 > before relying on it, and never claim a feature works until it has been run.
 
 ## Ground rules
@@ -56,8 +56,9 @@ weakest spots, and repeat until every category is 8 or more. Agents that cannot 
 sheet to the user instead of scoring it themselves. Automated checks: -14 LUFS integrated and
 -1 dBTP, constant fps, text inside the platform safe zone, no blank frames, deterministic frames.
 
-An agent without a terminal (for example a chat app) finishes by giving the user the exact command
-to paste.
+An agent without a terminal (for example a chat app) hands the user one self-contained film folder,
+asks for its path and gives one command to paste: `skills/fcwm/references/handoff.md`. Cloud renders
+always run on the user's own GitHub account.
 
 ## Repository layout
 

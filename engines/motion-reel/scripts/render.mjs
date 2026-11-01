@@ -46,7 +46,7 @@ if (!FILM || !fs.existsSync(path.join(ROOT, FILM, 'index.html'))) {
   console.error(`usage: node render.mjs --film <dir> [...]  (run from the folder that holds <dir>/index.html)`);
   process.exit(1);
 }
-const OUT = path.join(ROOT, 'out', FILM);
+const OUT = path.join(process.env.MOTION_REEL_OUT || path.join(ROOT, 'out'), FILM);
 const FILM_DIR = path.join(ROOT, FILM);
 const FORMAT = opt('format', '16x9');
 if (!FORMATS[FORMAT]) {

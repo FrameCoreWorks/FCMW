@@ -5,6 +5,9 @@
 //                                    [--duration 15] [--bpm 120] [--title "..."]
 //   node scripts/fcwm.mjs render <film> [--check | --at 3.2,7.5] [--format 9x16] [--no-qa]
 //   node scripts/fcwm.mjs qa <film | video.mp4> [--determinism]
+//   node scripts/fcwm.mjs run <folder> [--check] [--cloud [--repo fcwm-renders]]   install what is missing, then render
+//   node scripts/fcwm.mjs setup [<folder>]           show what is installed and what a film still needs
+//   node scripts/fcwm.mjs command <folder> --os macos|windows|linux [--next] [--cloud]   the line to paste
 //   node scripts/fcwm.mjs doctor
 //   node scripts/fcwm.mjs engines
 //
@@ -18,8 +21,12 @@ import { describe, runSteps } from './lib/pipeline.mjs';
 import { checkTools, hasPlaywright } from './lib/tools.mjs';
 import { byStillTime } from './lib/contact.mjs';
 import { checkVideo, determinism, summarize } from '../qa/checks.mjs';
+import { requirementsFor, ensure, detect, readState, statePath, fcwmHome } from './lib/setup.mjs';
+import { handoffCommand, normalizeOs } from './lib/handoff.mjs';
+import { cloudRender, cloudPlan } from './lib/cloud.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const VERSION = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8')).version;
 const catalog = JSON.parse(fs.readFileSync(path.join(REPO, 'engines', 'catalog.json'), 'utf8'));
 
 // A film loads GSAP when a script tag or an import names it, or it calls gsap.*; a comment does not count.
@@ -27,10 +34,10 @@ export const LOADS_GSAP = /<script[^>]*gsap|from\s+['"][^'"]*gsap|\bgsap\.(timel
 
 class UserError extends Error { constructor(msg, code = 1) { super(msg); this.code = code; } }
 
-const USAGE = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 11).map((l) => l.replace(/^\/\/ ?/, '')).join('\n');
+const USAGE = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 14).map((l) => l.replace(/^\/\/ ?/, '')).join('\n');
 
 export async function main(argv, { cwd = process.cwd(), log = console.log } = {}) {
-  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'no-qa', 'determinism', 'help'] });
+  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'no-qa', 'determinism', 'help', 'cloud', 'next'] });
   const [cmd, target] = a._;
   if (!cmd || a.help || cmd === 'help') { log(USAGE); return 0; }
   if (cmd === 'engines') return engines(log);
@@ -38,6 +45,9 @@ export async function main(argv, { cwd = process.cwd(), log = console.log } = {}
   if (cmd === 'new') return newFilm(target, a, cwd, log);
   if (cmd === 'render') return render(target, a, cwd, log);
   if (cmd === 'qa') return qa(target, a, cwd, log);
+  if (cmd === 'run') return runFolder(target, a, cwd, log);
+  if (cmd === 'setup') return setup(target, a, cwd, log);
+  if (cmd === 'command') return command(target, a, cwd, log);
   throw new UserError(`unknown command "${cmd}"\n\n${USAGE}`);
 }
 
@@ -79,6 +89,8 @@ async function newFilm(slug, a, cwd, log) {
   const steps = adapter.scaffoldSteps(cwd, slug, { duration: Number(a.duration) || 15, formats, bpm: Number(a.bpm) || 120, threeD: !!a['3d'], title: a.title });
   if (a['dry-run']) { log(describe(steps)); return 0; }
   await runSteps(steps, { log });
+  const cfgPath = path.join(dest, 'film.json');
+  if (fs.existsSync(cfgPath)) fs.writeFileSync(cfgPath, JSON.stringify({ ...JSON.parse(fs.readFileSync(cfgPath, 'utf8')), fcwm: VERSION }, null, 2) + '\n');
   log(`new ${engine} film: ${dest}\nnext: write the film, then  fcwm render ${slug} --check`);
   return 0;
 }
@@ -171,6 +183,70 @@ async function qa(target, a, cwd, log) {
   const { film } = await prepare(target, a, cwd, log);
   await requireTools(['ffmpeg', 'ffprobe'], log);
   return qaFilm(film, a.format ? String(a.format).split(',') : film.formats, a, log);
+}
+
+// A folder is one film (it has film.json) or a project folder whose direct subfolders are films.
+export function filmsIn(folder, cwd) {
+  const dir = path.resolve(cwd, folder);
+  if (!fs.existsSync(dir)) throw new UserError(`folder not found: ${dir}\nCheck the path (drag the folder into the Terminal window to paste its exact path).`);
+  if (fs.existsSync(path.join(dir, 'film.json'))) return [loadFilm(dir)];
+  const films = fs.readdirSync(dir, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && fs.existsSync(path.join(dir, d.name, 'film.json'))).map((d) => loadFilm(path.join(dir, d.name)));
+  if (!films.length) throw new UserError(`${dir} holds no film: a film folder has a film.json`);
+  return films;
+}
+
+const newer = (a, b) => { const p = (v) => String(v).split('.').map(Number); const [x, y] = [p(a), p(b)];
+  for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); return false; };
+
+async function runFolder(target, a, cwd, log) {
+  if (!target) throw new UserError('usage: fcwm run <film folder> [--check] [--cloud]');
+  const films = filmsIn(target, cwd);
+  for (const film of films) if (film.config.fcwm && newer(film.config.fcwm, VERSION))
+    throw new UserError(`${film.slug} was made with FCWM ${film.config.fcwm}, this computer has ${VERSION}. Update with the first-time command (it downloads the new version).`);
+  const os = { darwin: 'macos', win32: 'windows' }[process.platform] || 'linux';
+  if (a.cloud) {
+    const need = ['git', 'gh'];
+    log(`FCWM ${VERSION}: checking the tools for a GitHub Actions render`);
+    const r = await ensure(need, { repo: REPO, version: VERSION, log, dryRun: a['dry-run'] });
+    if (a['dry-run']) { for (const f of films) log(cloudPlan({ film: f, repo: a.repo, ref: a.ref, mode: a.check ? 'check' : 'full' }).map((l, i) => `${i + 1}. ${l}`).join('\n')); return 0; }
+    if (!r.ok) throw new UserError(`still missing: ${r.missing.join(', ')}`, 2);
+    for (const film of films) await cloudRender({ film, repoDir: REPO, home: fcwmHome(), repo: a.repo || 'fcwm-renders', ref: a.ref || 'main', mode: a.check ? 'check' : 'full', log });
+  } else {
+    const need = [...new Set(films.flatMap(requirementsFor))];
+    log(`FCWM ${VERSION}: checking the tools for ${films.map((f) => f.slug).join(', ')}`);
+    const r = await ensure(need, { repo: REPO, version: VERSION, log, dryRun: a['dry-run'] });
+    if (!a['dry-run'] && !r.ok) throw new UserError(`still missing: ${r.missing.join(', ')}. ${r.manual.join(' ')}`, 2);
+    if (!a['dry-run']) log(`installed tools are recorded in ${statePath()}; the next render skips them.`);
+    let code = 0;
+    for (const film of films) code = Math.max(code, await render(film.dir, a, cwd, log));
+    if (code) return code;
+  }
+  if (a['dry-run']) return 0;
+  log(`\nfinished files: ${films.map((f) => f.renderDir).join(', ')}`);
+  log(`next time this computer only needs:\n  ${handoffCommand({ folder: films.length === 1 ? films[0].dir : path.resolve(cwd, target), os, first: false, cloud: !!a.cloud, app: defaultApp() ? undefined : REPO })}`);
+  return 0;
+}
+
+const defaultApp = () => !process.env.FCWM_HOME && path.resolve(REPO) === path.join(fcwmHome(), 'app');
+
+async function setup(target, a, cwd, log) {
+  const films = target ? filmsIn(target, cwd) : [];
+  const need = films.length ? [...new Set(films.flatMap(requirementsFor))] : ['ffmpeg', 'chromium', 'uv', 'git', 'gh'];
+  const found = detect(need, { repo: REPO });
+  log(`FCWM ${VERSION} in ${REPO}, Node ${process.versions.node}`);
+  for (const n of need) log(`${found[n] ? 'ok     ' : 'missing'} ${n}${found[n] ? `  ${found[n]}` : ''}`);
+  const state = readState();
+  log(state ? `last check: ${state.checked} (${statePath()})` : `no checks recorded yet (${statePath()})`);
+  return need.every((n) => found[n]) ? 0 : 2;
+}
+
+function command(target, a, cwd, log) {
+  if (!target) throw new UserError('usage: fcwm command <film folder> --os macos|windows|linux [--next] [--cloud]');
+  let os;
+  try { os = normalizeOs(a.os || { darwin: 'macos', win32: 'windows' }[process.platform] || 'linux'); } catch (e) { throw new UserError(e.message); }
+  log(handoffCommand({ folder: target, os, first: !a.next, cloud: !!a.cloud, ref: a.ref || 'main' }));
+  return 0;
 }
 
 const isMain = () => { try { return fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url)); } catch { return false; } };

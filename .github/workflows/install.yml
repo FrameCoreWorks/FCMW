@@ -1,0 +1,79 @@
+name: install
+
+# The one-line installers on macOS, Windows and Linux: a clean FCWM home, a film folder whose path has
+# a space, '&' and an apostrophe, install only what is missing, render contact sheets, then run again
+# and expect every tool to be skipped. Runs only when the installer or the CLI changes.
+on:
+  pull_request:
+    paths: [scripts/install.sh, scripts/install.ps1, scripts/fcwm.mjs, scripts/lib/**, .github/workflows/install.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unix:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: First run (installs what is missing, renders)
+        env:
+          FCWM_SRC: ${{ github.workspace }}
+          FCWM_HOME: ${{ runner.temp }}/fcwm-home
+        run: |
+          FILMS="$RUNNER_TEMP/Codex&Claude/Klient's films"
+          mkdir -p "$FILMS"
+          (cd "$FILMS" && node "$GITHUB_WORKSPACE/scripts/fcwm.mjs" new install-test --duration 2)
+          bash scripts/install.sh "$FILMS/install-test" --check
+          ls "$FILMS/install-test/render"
+          test -f "$FCWM_HOME/state.json"
+      - name: Second run (skips every install)
+        env:
+          FCWM_SRC: ${{ github.workspace }}
+          FCWM_HOME: ${{ runner.temp }}/fcwm-home
+        run: |
+          FILMS="$RUNNER_TEMP/Codex&Claude/Klient's films"
+          bash scripts/install.sh "$FILMS/install-test" --check | tee second.log
+          grep -q "already installed, skipping: FCWM" second.log
+          grep -q "nothing to install" second.log
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: First run (installs what is missing, renders)
+        shell: pwsh
+        env:
+          FCWM_SRC: ${{ github.workspace }}
+          FCWM_HOME: ${{ runner.temp }}\fcwm-home
+        run: |
+          $Films = Join-Path $env:RUNNER_TEMP "Codex&Claude\Klient's films"
+          New-Item -ItemType Directory -Force -Path $Films | Out-Null
+          Push-Location $Films; node "$env:GITHUB_WORKSPACE\scripts\fcwm.mjs" new install-test --duration 2; Pop-Location
+          # same entry as the published one-liner, from this checkout instead of GitHub
+          & ([scriptblock]::Create((Get-Content scripts\install.ps1 -Raw))) (Join-Path $Films 'install-test') --check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Get-ChildItem (Join-Path $Films 'install-test\render')
+          if (-not (Test-Path "$env:FCWM_HOME\state.json")) { throw 'state.json missing' }
+      - name: Second run (skips every install)
+        shell: pwsh
+        env:
+          FCWM_SRC: ${{ github.workspace }}
+          FCWM_HOME: ${{ runner.temp }}\fcwm-home
+        run: |
+          $Films = Join-Path $env:RUNNER_TEMP "Codex&Claude\Klient's films"
+          $out = & ([scriptblock]::Create((Get-Content scripts\install.ps1 -Raw))) (Join-Path $Films 'install-test') --check *>&1 | Out-String
+          Write-Host $out
+          if ($out -notmatch 'nothing to install') { throw 'expected every tool to be skipped' }
