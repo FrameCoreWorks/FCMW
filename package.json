@@ -8,6 +8,7 @@
   "type": "module",
   "engines": { "node": ">=18" },
   "scripts": {
-    "validate": "node scripts/validate.mjs"
+    "validate": "node scripts/validate.mjs",
+    "test": "node --test lib/test/lib.test.mjs"
   }
 }
