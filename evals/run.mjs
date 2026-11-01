@@ -24,7 +24,7 @@ const CATEGORIES = ['hook', 'readability', 'motion', 'variety', 'briefFit', 'sou
 
 export function loadTasks(dir = path.join(HERE, 'tasks')) {
   return fs.readdirSync(dir).filter((n) => n.endsWith('.md')).sort().map((n) => {
-    const text = fs.readFileSync(path.join(dir, n), 'utf8');
+    const text = fs.readFileSync(path.join(dir, n), 'utf8').replace(/\r\n/g, '\n');  // CRLF on Windows checkouts
     const [, head, brief] = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(text) || [];
     if (!head) throw new Error(`${n}: missing front matter`);
     const meta = Object.fromEntries(head.split('\n').map((l) => l.split(/:\s*/, 2)).map(([k, ...v]) => [k.trim(), v.join(':').trim()]));
