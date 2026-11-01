@@ -5,6 +5,20 @@ and gives you one line to paste on your computer, or sets up a render in GitHub 
 GitHub account. Plugins and skills are available on ChatGPT Business, Enterprise, Healthcare and Edu,
 subject to workspace settings.
 
+## Easiest: paste the link in a chat (any member)
+
+Start a new chat in ChatGPT Work, pick **Plugin Creator** from the `@` menu and paste:
+
+```text
+@Plugin Creator Install the FCWM plugin from https://github.com/FrameCoreWorks/FCWM for me. Read INSTALL.md in that repository first (the ChatGPT Work section), then follow it step by step.
+```
+
+Plugin Creator reads [INSTALL.md](../INSTALL.md), pins one commit, rebuilds the plugin in its sandbox
+file by file, checks every file against the SHA-256 list in `plugin-files.json` and saves the plugin
+only when all of them match. It then reports three things: saved, files match, works in a new chat.
+Check: Settings > Plugins, FCWM is listed; in a new chat type `@fcwm`. To update later, paste the same
+prompt again: it updates the same plugin and keeps your own additions.
+
 ## Option A: import from GitHub (workspace owner or admin, keeps itself up to date)
 
 1. Open the [Admin console](https://admin.openai.com/), choose your ChatGPT workspace, open **Plugins**.
@@ -24,7 +38,7 @@ Build the ZIP from a clone (manifests and skills at the ZIP root, plus the block
 templates the skills point to):
 
 ```sh
-git archive --format=zip -o fcwm-plugin.zip HEAD .claude-plugin .codex-plugin skills lib recipes templates knowledge brand-kit engines/catalog.json integrations qa/README.md AGENTS.md README.md LICENSE NOTICE
+git archive --format=zip -o fcwm-plugin.zip HEAD .claude-plugin .codex-plugin skills lib recipes templates knowledge brand-kit engines/catalog.json integrations qa/README.md AGENTS.md README.md INSTALL.md LICENSE NOTICE plugin.json plugin-files.json
 ```
 
 Admin console > your workspace > **Plugins** > **Add** > **Upload plugin**, choose `fcwm-plugin.zip`,

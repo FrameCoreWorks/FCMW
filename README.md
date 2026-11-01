@@ -50,6 +50,21 @@ The current list is in [`engines/catalog.json`](engines/catalog.json).
 
 ## Install
 
+ChatGPT Work: in a new chat pick **Plugin Creator** from the `@` menu and paste
+
+```text
+@Plugin Creator Install the FCWM plugin from https://github.com/FrameCoreWorks/FCWM for me. Read INSTALL.md in that repository first (the ChatGPT Work section), then follow it step by step.
+```
+
+Any other agent that can read GitHub (Codex, Claude, Cursor, Gemini): paste
+
+```text
+Install the FCWM plugin from https://github.com/FrameCoreWorks/FCWM for me. Follow INSTALL.md in that
+repository. Prefer your native plugin or skill installer.
+```
+
+The agent follows [INSTALL.md](INSTALL.md). Or install it yourself.
+
 Any agent, via the [skills](https://github.com/vercel-labs/skills) installer:
 
 ```sh
@@ -72,8 +87,8 @@ gemini extensions install https://github.com/FrameCoreWorks/FCWM
 Codex and Cursor read the manifests in `.codex-plugin/` and `.cursor-plugin/`; agents that only read
 `AGENTS.md` get the same instructions from the repository root.
 
-ChatGPT (Work, Business, Enterprise, Edu): import the repository as a plugin marketplace in the Admin
-console, or upload a plugin ZIP: [FCWM in ChatGPT](docs/install-chatgpt.md).
+ChatGPT (Work, Business, Enterprise, Edu): paste the Plugin Creator prompt above into a chat, or (workspace admins)
+import the repository as a plugin marketplace, or upload a plugin ZIP: [FCWM in ChatGPT](docs/install-chatgpt.md).
 
 ## Render a film
 
