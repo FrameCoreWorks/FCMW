@@ -1,0 +1,104 @@
+{
+  "model": "sonnet",
+  "release": "0.4.0",
+  "tasks": {
+    "chart-10s": {
+      "task": "chart-10s",
+      "made": true,
+      "engine": "hyperframes",
+      "formats": [
+        "16x9"
+      ],
+      "duration": 10,
+      "codeLines": 84,
+      "formatOk": true,
+      "durationOk": true,
+      "render": {
+        "pass": true,
+        "seconds": 32
+      },
+      "qa": {
+        "loudness": "skip",
+        "frameRate": "pass",
+        "blankFrames": "pass",
+        "size": "pass",
+        "determinism": "pass"
+      },
+      "automatedPass": true,
+      "visual": {
+        "hook": 6,
+        "readability": 7,
+        "motion": 7,
+        "variety": 6,
+        "briefFit": 9
+      },
+      "notes": "Correct values and one accent, but the first frame is nearly empty and the chart is small in the frame."
+    },
+    "lyric-beat": {
+      "task": "lyric-beat",
+      "made": true,
+      "engine": "motion-reel",
+      "formats": [
+        "9x16"
+      ],
+      "duration": 12,
+      "codeLines": 206,
+      "formatOk": true,
+      "durationOk": true,
+      "render": {
+        "pass": true,
+        "seconds": 114
+      },
+      "qa": {
+        "loudness": "pass",
+        "frameRate": "pass",
+        "blankFrames": "pass",
+        "size": "pass",
+        "determinism": "pass"
+      },
+      "automatedPass": true,
+      "visual": {
+        "hook": 6,
+        "readability": 8,
+        "motion": 7,
+        "variety": 6,
+        "briefFit": 8,
+        "soundSync": 8
+      },
+      "notes": "Two seconds of a pulsing dot before the first word (weak hook); type in the upper half of 9:16; 3 s static end lockup; exit ghosting."
+    },
+    "promo-15s": {
+      "task": "promo-15s",
+      "made": true,
+      "engine": "hyperframes",
+      "formats": [
+        "9x16"
+      ],
+      "duration": 15,
+      "codeLines": 127,
+      "formatOk": true,
+      "durationOk": true,
+      "render": {
+        "pass": true,
+        "seconds": 40
+      },
+      "qa": {
+        "loudness": "skip",
+        "frameRate": "pass",
+        "blankFrames": "pass",
+        "size": "pass",
+        "determinism": "pass"
+      },
+      "automatedPass": true,
+      "visual": {
+        "hook": 8,
+        "readability": 8,
+        "motion": 7,
+        "variety": 7,
+        "briefFit": 7
+      },
+      "notes": "Solid, but the product looks plastic and the layout repeats."
+    }
+  },
+  "scored": "2026-11-01"
+}
