@@ -3,5 +3,6 @@
   "engine": "hyperframes",
   "duration": {{DURATION}},
   "fps": {{FPS}},
-  "formats": {{FORMATS}}
+  "formats": {{FORMATS}},
+  "exports": {{EXPORTS}}
 }

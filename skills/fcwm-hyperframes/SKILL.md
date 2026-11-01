@@ -24,6 +24,10 @@ runs.
 | Full render, preview, QA | `node <repo>/scripts/fcwm.mjs render <film>` |
 | Determinism check | `node <repo>/scripts/fcwm.mjs qa <film> --determinism` |
 
+Extra formats: `fcwm render <film> --export gif,webm,mov` (or `"exports"` in film.json). For a
+transparent overlay start with `fcwm new <film> --alpha`: the ground is `transparent` and the film also
+renders `mov-alpha` (ProRes 4444) or `webm-alpha`. Keep the ground transparent in such a film.
+
 One film is one canvas size. For another aspect ratio make a second film and recompose it for that shape;
 never crop.
 

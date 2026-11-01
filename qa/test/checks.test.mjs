@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { loudness, frameRate, blankFrames, safeZone, determinism, probe } from '../checks.mjs';
+import { loudness, frameRate, blankFrames, safeZone, determinism, probe, alphaChannel } from '../checks.mjs';
 
 const hasFfmpeg = !spawnSync('ffmpeg', ['-version']).error && !spawnSync('ffprobe', ['-version']).error;
 const skip = hasFfmpeg ? false : 'ffmpeg/ffprobe not on PATH: media checks not run here';
@@ -21,6 +21,7 @@ before(() => {
   ff(...V, ...ENC, f('silent.mp4'));
   ff('-f', 'lavfi', '-i', 'testsrc2=size=320x240:rate=30:duration=1', '-f', 'lavfi', '-i', 'color=black:size=320x240:rate=30:duration=1',
     '-f', 'lavfi', '-i', 'testsrc2=size=320x240:rate=30:duration=1', '-filter_complex', '[0][1][2]concat=n=3:v=1', ...ENC, f('gap.mp4'));
+  ff('-f', 'lavfi', '-i', 'color=c=red@0.5:size=64x64:rate=30:duration=1,format=yuva444p10le', '-c:v', 'prores_ks', '-profile:v', '4', f('alpha.mov'));
   ff(...V, '-vf', "select='not(between(n,30,40))'", '-fps_mode', 'passthrough', ...ENC, f('vfr.mp4'));
 });
 
@@ -63,4 +64,9 @@ test('determinism: compares bytes per time', async () => {
   });
   assert.equal((await determinism((tag) => write(tag, true))).pass, true);
   assert.deepEqual((await determinism((tag) => write(tag, false))).diffs, [1]);
+});
+
+test('alphaChannel: ProRes 4444 with alpha passes, H.264 fails', { skip }, () => {
+  assert.equal(alphaChannel(f('alpha.mov')).pass, true);
+  assert.equal(alphaChannel(f('silent.mp4')).pass, false);
 });

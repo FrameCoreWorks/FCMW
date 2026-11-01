@@ -10,6 +10,7 @@ review. `fcwm render <film>` runs them on every delivered file and writes `<film
 | Frame rate | Constant, matches the film's fps (every frame step within 1 %) | automatic |
 | Canvas size | Matches the format (9x16 1080x1920, 16x9 1920x1080, 1x1 1080x1080) | automatic |
 | Blank frames | No flat frame (luma range 3 or less) outside `film.json` `allowBlank: [[from, to]]` | automatic |
+| Exports | Every requested export exists at the film's size; `mov-alpha` / `webm-alpha` carry a real alpha channel | automatic |
 | Determinism | Three frames rendered twice are byte-identical | `fcwm qa <film> --determinism` |
 | Safe zone | All text inside the platform's safe area (9x16: x 6-94 %, y 10-80 %) | `safeZone()` exists; not yet wired to a film, check by eye |
 | 3D z-fighting | No coplanar faces flickering in three.js scenes | `audit-zfight.mjs`, manual |

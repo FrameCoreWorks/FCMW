@@ -2,8 +2,8 @@
 // FCWM command line: new film, render, quality checks. Works on macOS, Windows and Linux.
 //
 //   node scripts/fcwm.mjs new <name> [--engine hyperframes|motion-reel] [--3d] [--pathtrace] [--format 9x16,16x9]
-//                                    [--duration 15] [--bpm 120] [--title "..."]
-//   node scripts/fcwm.mjs render <film> [--check | --at 3.2,7.5] [--format 9x16] [--no-qa]
+//                                    [--duration 15] [--bpm 120] [--title "..."] [--alpha]
+//   node scripts/fcwm.mjs render <film> [--check | --at 3.2,7.5] [--format 9x16] [--export gif,webm,mov,mov-alpha,webm-alpha] [--no-qa]
 //   node scripts/fcwm.mjs qa <film | video.mp4> [--determinism]
 //   node scripts/fcwm.mjs run <folder> [--check] [--cloud [--repo fcwm-renders]]   install what is missing, then render
 //   node scripts/fcwm.mjs setup [<folder>]           show what is installed and what a film still needs
@@ -20,7 +20,8 @@ import { loadFilm, loadAdapter, ENGINES, FORMATS } from './lib/film.mjs';
 import { describe, runSteps } from './lib/pipeline.mjs';
 import { checkTools, hasPlaywright } from './lib/tools.mjs';
 import { byStillTime } from './lib/contact.mjs';
-import { checkVideo, determinism, summarize } from '../qa/checks.mjs';
+import { parseExports, exportSteps, exportPath, EXPORTS } from './lib/export.mjs';
+import { checkVideo, determinism, summarize, alphaChannel, probe } from '../qa/checks.mjs';
 import { requirementsFor, ensure, detect, readState, statePath, fcwmHome } from './lib/setup.mjs';
 import { handoffCommand, normalizeOs } from './lib/handoff.mjs';
 import { cloudRender, cloudPlan } from './lib/cloud.mjs';
@@ -37,7 +38,7 @@ class UserError extends Error { constructor(msg, code = 1) { super(msg); this.co
 const USAGE = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 14).map((l) => l.replace(/^\/\/ ?/, '')).join('\n');
 
 export async function main(argv, { cwd = process.cwd(), log = console.log } = {}) {
-  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'pathtrace', 'no-qa', 'determinism', 'help', 'cloud', 'next'] });
+  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'pathtrace', 'alpha', 'no-qa', 'determinism', 'help', 'cloud', 'next'] });
   const [cmd, target] = a._;
   if (!cmd || a.help || cmd === 'help') { log(USAGE); return 0; }
   if (cmd === 'engines') return engines(log);
@@ -85,8 +86,9 @@ async function newFilm(slug, a, cwd, log) {
   if (!ENGINES.includes(engine)) throw new UserError(`--engine must be one of ${ENGINES.join(', ')}`);
   const formats = String(a.format || '9x16').split(',');
   for (const f of formats) if (!FORMATS[f]) throw new UserError(`--format ${f} is not one of ${Object.keys(FORMATS).join(', ')}`);
+  if (a.alpha && engine !== 'hyperframes') throw new UserError('--alpha (transparent background) is available for HyperFrames films; motion-reel renders opaque frames');
   const adapter = await loadAdapter(engine);
-  const steps = adapter.scaffoldSteps(cwd, slug, { duration: Number(a.duration) || 15, formats, bpm: Number(a.bpm) || 120, threeD: !!(a['3d'] || a.pathtrace), pathtrace: !!a.pathtrace, title: a.title });
+  const steps = adapter.scaffoldSteps(cwd, slug, { duration: Number(a.duration) || 15, formats, bpm: Number(a.bpm) || 120, threeD: !!(a['3d'] || a.pathtrace), pathtrace: !!a.pathtrace, title: a.title, alpha: !!a.alpha });
   if (a['dry-run']) { log(describe(steps)); return 0; }
   await runSteps(steps, { log });
   const cfgPath = path.join(dest, 'film.json');
@@ -118,13 +120,14 @@ async function render(target, a, cwd, log) {
   if (film.engine === 'hyperframes' && formats.join() !== film.formats[0])
     throw new UserError(`a HyperFrames film renders only in its own format (${film.formats[0]}); make another film for ${formats.join(', ')}`);
   const steps = adapter.plan(film, mode, { at: String(a.at || ''), formats });
-  if (mode === 'full') steps.push(previewStep(film, formats[0]));
+  const kinds = mode === 'full' ? parseExports(a.export ?? film.config.exports) : [];
+  if (mode === 'full') steps.push(previewStep(film, formats[0]), ...exportSteps(film, adapter, formats, kinds));
   if (a['dry-run']) { log(describe(steps)); return 0; }
   await requireRenderTools(film, adapter);
   await runSteps(steps, { log });
   log(`done: ${film.renderDir}`);
   if (mode !== 'full' || a['no-qa']) return 0;
-  return qaFilm(film, formats, a, log);
+  return qaFilm(film, formats, { ...a, kinds }, log);
 }
 
 async function requireRenderTools(film, adapter) {
@@ -157,6 +160,21 @@ async function qaFilm(film, formats, a, log) {
     report.videos.push(r);
     log(`QA ${path.basename(file)}\n${summarize(r)}`);
     ok &&= [r.loudness, r.frameRate, r.blankFrames, r.size].every((c) => c.pass);
+  }
+  for (const kind of a.kinds || []) {
+    for (const f of formats) {
+      const file = exportPath(film, f, kind);
+      const r = { file, exists: { pass: fs.existsSync(file) } };
+      if (r.exists.pass && kind !== 'gif') {
+        const info = probe(file);
+        const [W, H] = FORMATS[f];
+        r.size = { pass: info.width === W && info.height === H, got: `${info.width}x${info.height}` };
+      }
+      if (r.exists.pass && EXPORTS[kind].alpha) r.alpha = alphaChannel(file);
+      (report.exports ||= []).push(r);
+      log(`QA ${path.basename(file)}\n${summarize(r)}`);
+      ok &&= [r.exists, r.size, r.alpha].filter(Boolean).every((c) => c.pass);
+    }
   }
   if (a.determinism) {
     const at = [...(film.config.qaTimes || [0.25, film.duration / 2, Math.max(0, film.duration - 0.25)])].map((t) => +Number(t).toFixed(2)).sort((x, y) => x - y);
