@@ -15,6 +15,7 @@ a neutral placeholder.
 | [kinetic-type-six-styles](kinetic-type-six-styles/) | canvas 2-D | Six type personalities through motion, hook on the beat, hit list driving SFX, recap |
 | [point-cloud-flight](point-cloud-flight/) | three.js points | 200k-point morphs with Morton correspondence, lit points with depth of field, camera chasing a stream |
 | [voxel-comedy](voxel-comedy/) | three.js voxels | Script-driven timeline, voxel characters, distance-driven walks, staged cameras, speech bubbles |
+| [film-blocks](film-blocks/) | HyperFrames | Title card, transitions, lower third, word-timed captions, end card from `lib/blocks.js` |
 | [ui-cursor-story](ui-cursor-story/) | HTML/DOM | Human cursor, liquid glass, iris transition, one continuous move, rhythm measured from a reference |
 
 The reusable parts of each film are extracted into tested modules in [`../lib`](../lib/). The

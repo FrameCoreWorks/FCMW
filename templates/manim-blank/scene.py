@@ -22,6 +22,12 @@ GROUND = "#111111"
 INK = "#f2f2f2"
 ACCENT = "#8a8a8a"
 
+# A brand kit (fcwm new --brand <kit>) replaces the placeholder colours it sets.
+_BRAND = pathlib.Path(__file__).parent / "brand" / "brand.json"
+if _BRAND.exists():
+    _c = json.loads(_BRAND.read_text()).get("colors", {})
+    GROUND, INK, ACCENT = _c.get("ground") or GROUND, _c.get("ink") or INK, _c.get("accent") or ACCENT
+
 
 class Film(Scene):
     def construct(self):

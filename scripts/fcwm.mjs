@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // FCWM command line: new film, render, quality checks. Works on macOS, Windows and Linux.
 //
-//   node scripts/fcwm.mjs new <name> [--engine hyperframes|motion-reel] [--3d] [--pathtrace] [--format 9x16,16x9]
-//                                    [--duration 15] [--bpm 120] [--title "..."] [--alpha]
+//   node scripts/fcwm.mjs new <name> [--engine hyperframes|motion-reel|manim|blender] [--3d] [--pathtrace] [--format 9x16,16x9]
+//                                    [--duration 15] [--bpm 120] [--title "..."] [--alpha] [--lottie [file]] [--brand <kit>]
 //   node scripts/fcwm.mjs render <film> [--check | --at 3.2,7.5] [--format 9x16] [--export gif,webm,mov,mov-alpha,webm-alpha] [--no-qa]
 //   node scripts/fcwm.mjs qa <film | video.mp4> [--determinism]
 //   node scripts/fcwm.mjs run <folder> [--check] [--cloud [--repo fcwm-renders]]   install what is missing, then render
@@ -10,6 +10,7 @@
 //   node scripts/fcwm.mjs command <folder> --os macos|windows|linux [--next] [--cloud]   the line to paste
 //   node scripts/fcwm.mjs doctor
 //   node scripts/fcwm.mjs engines
+//   node scripts/fcwm.mjs brand list | init <kit> | check <kit>   optional brand kits, saved once outside the repo
 //
 // Every command takes --dry-run (print the steps, run nothing). Exit codes: 0 ok, 1 failed, 2 missing tool.
 import fs from 'node:fs';
@@ -21,6 +22,7 @@ import { describe, runSteps } from './lib/pipeline.mjs';
 import { checkTools, hasPlaywright } from './lib/tools.mjs';
 import { byStillTime } from './lib/contact.mjs';
 import { parseExports, exportSteps, exportPath, EXPORTS } from './lib/export.mjs';
+import { listKits, initKit, loadKit, checkKit, applyKit, kitDir, kitsDir } from './lib/brand.mjs';
 import { checkVideo, determinism, summarize, alphaChannel, probe } from '../qa/checks.mjs';
 import { requirementsFor, ensure, detect, readState, statePath, fcwmHome } from './lib/setup.mjs';
 import { handoffCommand, normalizeOs } from './lib/handoff.mjs';
@@ -35,7 +37,7 @@ export const LOADS_GSAP = /<script[^>]*gsap|from\s+['"][^'"]*gsap|\bgsap\.(timel
 
 class UserError extends Error { constructor(msg, code = 1) { super(msg); this.code = code; } }
 
-const USAGE = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 14).map((l) => l.replace(/^\/\/ ?/, '')).join('\n');
+const USAGE = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 15).map((l) => l.replace(/^\/\/ ?/, '')).join('\n');
 
 export async function main(argv, { cwd = process.cwd(), log = console.log } = {}) {
   const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'pathtrace', 'alpha', 'no-qa', 'determinism', 'help', 'cloud', 'next'] });
@@ -49,13 +51,14 @@ export async function main(argv, { cwd = process.cwd(), log = console.log } = {}
   if (cmd === 'run') return runFolder(target, a, cwd, log);
   if (cmd === 'setup') return setup(target, a, cwd, log);
   if (cmd === 'command') return command(target, a, cwd, log);
+  if (cmd === 'brand') return brand(target, a._[2], log);
   throw new UserError(`unknown command "${cmd}"\n\n${USAGE}`);
 }
 
 function engineEntry(id) { return catalog.engines.find((e) => e.id === id); }
 
 function engines(log) {
-  for (const e of catalog.engines) log(`${e.id.padEnd(14)} ${e.tier.padEnd(11)} ${e.status.padEnd(16)} ${e.license}\n  ${e.purpose}`);
+  for (const e of catalog.engines) log(`${e.id.padEnd(14)} ${e.tier.padEnd(11)} ${e.status.padEnd(16)} ${e.license}\n  ${e.purpose}${e.route ? `\n  use: fcwm new <film> --${e.id} (runs on ${e.route})` : ''}`);
   return 0;
 }
 
@@ -86,15 +89,37 @@ async function newFilm(slug, a, cwd, log) {
   if (!ENGINES.includes(engine)) throw new UserError(`--engine must be one of ${ENGINES.join(', ')}`);
   const formats = String(a.format || '9x16').split(',');
   for (const f of formats) if (!FORMATS[f]) throw new UserError(`--format ${f} is not one of ${Object.keys(FORMATS).join(', ')}`);
-  if (a.alpha && !['hyperframes', 'manim'].includes(engine)) throw new UserError('--alpha (transparent background) is available for HyperFrames and Manim films; motion-reel renders opaque frames');
+  if (a.alpha && !['hyperframes', 'manim', 'blender'].includes(engine)) throw new UserError('--alpha (transparent background) is available for HyperFrames, Manim and Blender films; motion-reel renders opaque frames');
+  if (a.lottie && engine !== 'hyperframes') throw new UserError('--lottie plays a Lottie animation inside a HyperFrames film; drop --engine');
   const adapter = await loadAdapter(engine);
-  const steps = adapter.scaffoldSteps(cwd, slug, { duration: Number(a.duration) || 15, formats, bpm: Number(a.bpm) || 120, threeD: !!(a['3d'] || a.pathtrace), pathtrace: !!a.pathtrace, title: a.title, alpha: !!a.alpha });
+  const steps = adapter.scaffoldSteps(cwd, slug, { lottie: a.lottie, duration: Number(a.duration) || 15, formats, bpm: Number(a.bpm) || 120, threeD: !!(a['3d'] || a.pathtrace), pathtrace: !!a.pathtrace, title: a.title, alpha: !!a.alpha });
   if (a['dry-run']) { log(describe(steps)); return 0; }
+  if (a.brand) { const k = loadKit(a.brand); const bad = checkKit(k, kitDir(a.brand)); if (bad.length) throw new UserError(`brand kit "${a.brand}":\n  ${bad.join('\n  ')}`); }
   await runSteps(steps, { log });
+  if (a.brand) log(`brand kit "${a.brand}" copied to ${applyKit(dest, a.brand)}`);
   const cfgPath = path.join(dest, 'film.json');
   if (fs.existsSync(cfgPath)) fs.writeFileSync(cfgPath, JSON.stringify({ ...JSON.parse(fs.readFileSync(cfgPath, 'utf8')), fcwm: VERSION }, null, 2) + '\n');
   log(`new ${engine} film: ${dest}\nnext: write the film, then  fcwm render ${slug} --check`);
   return 0;
+}
+
+function brand(action, name, log) {
+  if (action === 'list') {
+    const kits = listKits();
+    log(kits.length ? kits.join('\n') : `no brand kits saved (${kitsDir()}); FCWM uses no brand unless the user saves one`);
+    return 0;
+  }
+  if (action === 'init') {
+    const dir = initKit(name);
+    log(`brand kit "${name}": ${path.join(dir, 'brand.json')}\nput logo, font and sound files in ${path.join(dir, 'assets')} and fill in brand.json, then  fcwm brand check ${name}`);
+    return 0;
+  }
+  if (action === 'check') {
+    const bad = checkKit(loadKit(name), kitDir(name));
+    log(bad.length ? `brand kit "${name}":\n  ${bad.join('\n  ')}` : `brand kit "${name}": ok`);
+    return bad.length ? 1 : 0;
+  }
+  throw new UserError('usage: fcwm brand list | init <name> | check <name>');
 }
 
 async function prepare(target, a, cwd, log) {

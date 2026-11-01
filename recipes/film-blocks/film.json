@@ -1,0 +1,10 @@
+{
+  "title": "film-blocks",
+  "engine": "hyperframes",
+  "duration": 12,
+  "fps": 30,
+  "formats": [
+    "16x9"
+  ],
+  "exports": []
+}

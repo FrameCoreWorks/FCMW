@@ -27,6 +27,7 @@ seconds unless a function says beats; convert with `beatGrid()` from `core.js`.
 | `cursor.js` | `cursorPath(waypoints)`: human cursor glides, press, ripples |
 | `points.js` | `morton3`, `mortonSort`, `resample`, `sampleMask`, `stagger`, `morph` for point clouds |
 | `camera.js` | `shotTrack(shots)`, `dollyZoomFov`, `camera2d` |
+| `blocks.js` | film pieces: `transition` (cut, fade, dip, wipe, push, slide, zoom, iris), `titleCard`, `lowerThird`, `captionLines` + `caption` (word-timed), `endCard`, `css(state)` |
 | `dialogue.js` | `script()` timeline (scene/say/wait/mark), `blink`, `wrap` |
 | `character.js` | `walkTrack`, `faceToward`, `gait` |
 | `dom/iris.js` | camera-iris blades as SVG paths |

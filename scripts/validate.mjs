@@ -125,7 +125,9 @@ if (catalog) {
     if (e.checked && !/^\d{4}-\d{2}-\d{2}$/.test(e.checked)) fail(where, `checked must be YYYY-MM-DD`);
     if (e.id && ids.has(e.id)) fail(where, "duplicate id");
     ids.add(e.id);
-    if ((e.status === "ready" || e.status === "experimental") && !existsSync(join(root, "engines", e.id))) fail(where, `status is ${e.status} but engines/${e.id}/ does not exist`);
+    // A "route" entry is a capability served by another engine (e.g. Lottie playback through HyperFrames).
+    const home = e.route || e.id;
+    if ((e.status === "ready" || e.status === "experimental") && !existsSync(join(root, "engines", home))) fail(where, `status is ${e.status} but engines/${home}/ does not exist`);
     for (const [j, m] of (e.modes || []).entries()) {
       const at = `${where} modes[${j}]${m.id ? ` (${m.id})` : ""}`;
       for (const k of ["id", "name", "purpose", "library", "tier", "license", "upstream", "cost", "status", "checked"]) if (m[k] === undefined || m[k] === "") fail(at, `missing "${k}"`);

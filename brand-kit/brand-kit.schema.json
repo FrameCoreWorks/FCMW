@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/FrameCoreWorks/FCWM/brand-kit/brand-kit.schema.json",
+  "title": "FCWM brand kit",
+  "description": "A user's own brand, saved once in ~/.fcwm/brand-kits/<name>/brand.json and used only when a film is started with --brand <name>. Every field except name is optional; an empty value means 'not decided'. File paths are relative to the kit folder.",
+  "type": "object",
+  "required": ["name"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "colors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ground": { "$ref": "#/$defs/colour", "description": "Background." },
+        "ink": { "$ref": "#/$defs/colour", "description": "Main text and foreground." },
+        "accent": { "$ref": "#/$defs/colour", "description": "Highlights, rules, calls to action." },
+        "palette": { "type": "array", "items": { "$ref": "#/$defs/hex" }, "description": "Further brand colours, in order of use." }
+      }
+    },
+    "fonts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "display": { "$ref": "#/$defs/font" }, "body": { "$ref": "#/$defs/font" } }
+    },
+    "logo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string", "description": "SVG or PNG with transparency, for light grounds." },
+        "fileOnDark": { "type": "string", "description": "Variant for dark grounds." }
+      }
+    },
+    "endCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "text": { "type": "string", "description": "Line under the logo, e.g. a web address." },
+        "duration": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "sound": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "logo": { "type": "string", "description": "Short sound logo (WAV), placed on the end card." } }
+    },
+    "notes": { "type": "string", "description": "Tone of voice, words to use and avoid, motion style, do and don't." }
+  },
+  "$defs": {
+    "hex": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+    "colour": { "anyOf": [{ "$ref": "#/$defs/hex" }, { "const": "" }] },
+    "font": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "family": { "type": "string" },
+        "file": { "type": "string", "description": "WOFF2, WOFF, OTF or TTF the user is licensed to use in video." }
+      }
+    }
+  }
+}
