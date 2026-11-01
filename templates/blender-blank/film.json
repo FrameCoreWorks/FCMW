@@ -1,0 +1,11 @@
+{
+  "title": "{{TITLE}}",
+  "engine": "blender",
+  "duration": {{DURATION}},
+  "fps": 30,
+  "formats": {{FORMATS}},
+  "alpha": {{ALPHA}},
+  "samples": 64,
+  "seed": 1,
+  "exports": {{EXPORTS}}
+}

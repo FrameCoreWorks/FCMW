@@ -2,6 +2,26 @@
 
 ## 0.3.0 (unreleased)
 
+- Blender engine (experimental, tier restricted: GPL-3.0): the official bpy module from PyPI (bpy 5.2.3,
+  Blender 5.2 LTS) runs headless through `uv run --with`, no app install. `fcwm new <film> --engine
+  blender [--alpha]` starts from a neutral studio scene built in `build(scene, film)`; Cycles with a
+  fixed seed, adaptive sampling off and metadata stripped from frames, so a frame renders the same twice
+  (checked). GPU (Metal, OptiX, CUDA, HIP, oneAPI) when present, else CPU. Contact sheets render only
+  the beat-grid frames at half size; alpha films deliver ProRes 4444 / WebM alpha from RGBA frames.
+  Skill `fcwm-blender`; draft and determinism check in the smoke test (a full render is too slow on CI).
+- Brand kits (optional, none shipped): `fcwm brand init | check | list` keeps a user's kit in
+  `~/.fcwm/brand-kits/<kit>/` (schema `brand-kit/brand-kit.schema.json`); `fcwm new <film> --brand <kit>`
+  copies it into the film, links `brand/brand.css` (colours, fonts) in HyperFrames films, and the Manim
+  and Blender starters read its colours.
+- Film blocks: `lib/blocks.js` (transitions: cut, fade, dip, wipe, push, slide, zoom, iris; title card;
+  lower third; word-timed captions; end card; `css(state)`), tested, and the `film-blocks` recipe that
+  uses all of them (render and QA pass).
+- Lottie and animated SVG (experimental), as a HyperFrames route: `fcwm new <film> --lottie
+  [animation.lottie|.json]` plays the user's animation on a canvas seeked by HyperFrames (no autoplay,
+  no own clock). The player is dotlottie-web 0.82.0 (MIT), fetched once from npm into `~/.fcwm/cache`
+  and copied with its LICENSE into the film, so renders read only local files; `--alpha` works.
+  Animated SVG is written inline and driven from `renderAt(t)`. No Lottie or SVG file export.
+  Guide: `skills/fcwm-hyperframes/references/lottie-svg.md`. Lottie added to the smoke test.
 - Manim engine (experimental): Manim Community 0.22.1 (MIT) through `uv run --with`, pinned, not
   vendored. `fcwm new <film> --engine manim` starts from a brand-neutral, LaTeX-free scene; films may
   list several formats (each rendered on its own canvas); `--alpha` delivers ProRes 4444 / WebM alpha.

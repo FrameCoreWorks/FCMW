@@ -1,0 +1,41 @@
+<!doctype html>
+<!-- FCWM starter for a Lottie / dotLottie animation played inside a HyperFrames film. HyperFrames seeks
+     every player pushed to window.__hfLottie to the frame's time, so the animation never runs on its own
+     clock (autoplay off). The player (dotlottie-web, MIT) and its WASM are local files in
+     lib/dotlottie-web/, so a render needs no network. Replace assets/{{ANIMATION}} with the user's
+     animation (.lottie or Lottie .json); colours are neutral placeholders. -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width={{W}}, height={{H}}" />
+    <style>
+      :root { --ground: {{GROUND}}; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: {{W}}px; height: {{H}}px; overflow: hidden; background: var(--ground); }
+      #root { position: relative; width: 100%; height: 100%; }
+      /* The canvas keeps a square drawing buffer; size it to the animation's own aspect if it differs. */
+      #anim { position: absolute; left: 50%; top: 50%; width: {{BOX}}px; height: {{BOX}}px;
+              transform: translate(-50%, -50%); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="{{DURATION}}"
+         data-width="{{W}}" data-height="{{H}}" data-fps="{{FPS}}" data-no-timeline>
+      <canvas id="anim" width="{{BOX}}" height="{{BOX}}"></canvas>
+    </div>
+    <script type="module">
+      import { DotLottie } from './lib/dotlottie-web/index.js';
+
+      DotLottie.setWasmUrl(new URL('./lib/dotlottie-web/dotlottie-player.wasm', import.meta.url).href);
+      const player = new DotLottie({
+        canvas: document.getElementById('anim'),
+        src: 'assets/{{ANIMATION}}',
+        autoplay: false,
+        loop: true,  // a short animation repeats across the film; set false to hold its last frame
+        renderConfig: { autoResize: false, freezeOnOffscreen: false, devicePixelRatio: 1 },
+      });
+      window.__hfLottie = window.__hfLottie || [];
+      window.__hfLottie.push(player);
+    </script>
+  </body>
+</html>

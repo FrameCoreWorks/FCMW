@@ -28,6 +28,12 @@ Extra formats: `fcwm render <film> --export gif,webm,mov` (or `"exports"` in fil
 transparent overlay start with `fcwm new <film> --alpha`: the ground is `transparent` and the film also
 renders `mov-alpha` (ProRes 4444) or `webm-alpha`. Keep the ground transparent in such a film.
 
+Title cards, transitions, lower thirds, word-timed captions and end cards: use `lib/fcwm/blocks.js`
+(already in the film) and the `recipes/film-blocks` walkthrough instead of writing them from scratch.
+
+Lottie or animated SVG: `fcwm new <film> --lottie [animation.lottie|.json]` plays a Lottie file seeked by
+HyperFrames; SVG is animated from `renderAt(t)`. Read `references/lottie-svg.md` first.
+
 One film is one canvas size. For another aspect ratio make a second film and recompose it for that shape;
 never crop.
 

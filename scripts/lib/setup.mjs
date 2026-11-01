@@ -22,6 +22,8 @@ export function requirementsFor(film) {
   if (film.engine === 'hyperframes') need.push('hyperframes');
   // Manim runs through uv; on Linux its text renderer (ManimPango) builds against the system Pango
   if (film.engine === 'manim') { need.push('uv'); if (process.platform === 'linux') need.push('pango'); }
+  // Blender runs as the bpy module through uv (a ~250-400 MB wheel, fetched once into uv's cache)
+  if (film.engine === 'blender') need.push('uv');
   return need;
 }
 

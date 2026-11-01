@@ -24,6 +24,7 @@ const films = [
   { engine: 'hyperframes', slug: 'smoke-hf', extra: [] },
   { engine: 'motion-reel', slug: 'smoke-mr', extra: ['--engine', 'motion-reel'] },
   { engine: 'manim', slug: 'smoke-mn', extra: ['--engine', 'manim', '--alpha'] },
+  { engine: 'lottie', slug: 'smoke-lt', extra: ['--lottie'] },
 ].filter((f) => !only || f.engine === only);
 
 for (const f of films) {
@@ -52,6 +53,20 @@ if (!only || only === 'pathtrace') {
       console.log(`pathtrace test frame: mean luma ${yavg}`);
       if (!(yavg > 20)) failures.push(`pathtrace: test frame is (nearly) black, mean luma ${yavg}`);
     }
+  }
+}
+
+// Blender: a transparent film, draft contact sheet and three full-size stills rendered twice (Cycles on
+// CPU, 4 samples). A full render is skipped: hundreds of CPU-rendered frames are too slow for CI.
+if (!only || only === 'blender') {
+  const slug = 'smoke-bl';
+  if ((await step('blender new', ['new', slug, '--engine', 'blender', '--alpha', '--duration', '2', '--format', '1x1'])) === 0) {
+    const cfgPath = path.join(dir, slug, 'film.json');
+    fs.writeFileSync(cfgPath, JSON.stringify({ ...JSON.parse(fs.readFileSync(cfgPath, 'utf8')), samples: 4 }, null, 2));
+    await step('blender check', ['render', slug, '--check']);
+    const sheet = path.join(dir, slug, 'render', 'contact_1x1_p1.png');
+    if (!fs.existsSync(sheet)) failures.push(`blender: no contact sheet at ${sheet}`);
+    await step('blender determinism', ['qa', slug, '--determinism']);
   }
 }
 

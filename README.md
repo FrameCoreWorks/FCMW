@@ -8,10 +8,13 @@ Claude apps, Codex, ChatGPT, Cursor, Gemini CLI and others. It brings no brand a
 You set the direction; FCWM brings the workshop: engines, a production method, quality control and
 rendering.
 
-> **Status: 0.3.0.** Two engines render end to end: HyperFrames (2-D, the default) and motion-reel
-> (3-D, generative, synthesized sound), driven by one cross-platform command with automated quality
-> checks, and a one-line installer that renders a film folder on any computer. Both engines are marked experimental. Manim, Blender, Lottie, extra export formats and the
-> brand kit come next.
+> **Status: 0.3.0.** Four engines render end to end: HyperFrames (2-D, the default, also plays Lottie
+> and animated SVG), motion-reel (3-D, generative, synthesized sound), Manim (equations, graphs,
+> technical explainers) and Blender (photoreal 3-D with Cycles; GPL, tier restricted), driven by one
+> cross-platform command with automated quality checks, extra formats (GIF, WebM, ProRes, transparent
+> ProRes 4444 / WebM), optional brand kits, tested film blocks (transitions, titles, lower thirds,
+> captions, end cards) and a one-line installer that renders a film folder on any computer. All engines
+> are marked experimental.
 
 ## Why code
 

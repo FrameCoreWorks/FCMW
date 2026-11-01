@@ -133,7 +133,37 @@ test('hyperframes scaffold: template filled for the format, lib copied, one form
   assert.ok(fs.existsSync(path.join(root, 'sq', 'lib', 'fcwm', 'core.js')));
   assert.equal(fs.existsSync(path.join(root, 'sq', 'lib', 'fcwm', 'test')), false);
   assert.deepEqual(loadFilm('sq', root).formats, ['1x1']);
-  assert.throws(() => hf.scaffoldSteps(root, 'two', { formats: ['1x1', '9x16'] })[0].fn(), /one format/);
+  assert.throws(() => hf.scaffoldSteps(root, 'two', { formats: ['1x1', '9x16'] }), /one format/);
+});
+
+test('hyperframes --lottie: pinned dotlottie-web from the cache, animation copied, player local', async () => {
+  const { DOTLOTTIE_VERSION, default: hf } = await import('../../engines/hyperframes/adapter.mjs');
+  const root = tmp();
+  const home = tmp();
+  const dist = path.join(home, 'cache', `dotlottie-web-${DOTLOTTIE_VERSION}`, 'package', 'dist');
+  fs.mkdirSync(dist, { recursive: true });
+  for (const f of ['index.js', 'dotlottie-player.wasm', '../LICENSE']) fs.writeFileSync(path.join(dist, f), 'x');
+  const saved = process.env.FCWM_HOME;
+  process.env.FCWM_HOME = home;
+  try {
+    const steps = hf.scaffoldSteps(root, 'lt', { duration: 4, formats: ['1x1'], lottie: true });
+    const download = steps.find((s) => s.cmd === 'npm');
+    assert.deepEqual(download.args.slice(0, 2), ['pack', `@lottiefiles/dotlottie-web@${DOTLOTTIE_VERSION}`]);
+    assert.equal(download.when(), false);  // cached: no download
+    steps.filter((s) => s.fn && !s.when).forEach((s) => s.fn());
+  } finally {
+    if (saved === undefined) delete process.env.FCWM_HOME; else process.env.FCWM_HOME = saved;
+  }
+  const html = fs.readFileSync(path.join(root, 'lt', 'index.html'), 'utf8');
+  assert.doesNotMatch(html, /\{\{/);
+  assert.match(html, /src: 'assets\/sample\.json'/);
+  assert.match(html, /autoplay: false/);
+  assert.match(html, /window\.__hfLottie/);
+  assert.doesNotMatch(html, /https?:\/\//);
+  for (const f of ['assets/sample.json', 'lib/dotlottie-web/index.js', 'lib/dotlottie-web/dotlottie-player.wasm', 'lib/dotlottie-web/LICENSE'])
+    assert.ok(fs.existsSync(path.join(root, 'lt', f)), f);
+  assert.throws(() => hf.scaffoldSteps(root, 'bad', { lottie: 'clip.mp4' }), /\.lottie or Lottie \.json/);
+  await assert.rejects(main(['new', 'x4', '--lottie', '--engine', 'manim'], { cwd: root, ...quiet }), /HyperFrames/);
 });
 
 test('stillTime reads both engines\' still names', async () => {
@@ -254,4 +284,78 @@ test('fcwm new --engine manim: scene.py and film.json from the starter', async (
   assert.equal(film.duration, 6);
   assert.equal(film.config.scene, 'Film');
   assert.match(fs.readFileSync(path.join(root, 'eq', 'scene.py'), 'utf8'), /class Film\(Scene\)/);
+});
+
+test('blender adapter: bpy pinned through uv, frames on the beat grid, alpha only for transparent films', async () => {
+  const { BPY_VERSION, frameAt } = await import('../../engines/blender/adapter.mjs');
+  const bl = await loadAdapter('blender');
+  const root = tmp();
+  makeFilm(root, 'pr', { engine: 'blender', fps: 30, duration: 4, formats: ['16x9'] });
+  const film = loadFilm('pr', root);
+  const full = bl.plan(film, 'full');
+  const render = full.find((s) => s.cmd === 'uv');
+  assert.deepEqual(render.args.slice(0, 7), ['run', '--quiet', '--python', '3.13', '--with', `bpy==${BPY_VERSION}`, 'python']);
+  assert.ok(render.args.join(' ').includes('--format 16x9'));
+  assert.equal(full.at(-1).args.at(-1), path.join(film.renderDir, 'pr-16x9.mp4'));
+  assert.ok(full.at(-1).args.includes('-an'));
+  // frame = round(t * fps) + 1, clamped to the film
+  assert.equal(frameAt(film, 0), 1);
+  assert.equal(frameAt(film, 1), 31);
+  assert.equal(frameAt(film, 99), 120);
+  const check = bl.plan(film, 'check').find((s) => s.cmd === 'uv');
+  assert.ok(check.args.join(' ').includes('--scale 0.5 --samples 8'));
+  const at = bl.plan(film, 'at', { at: '0.5,2' }).find((s) => s.cmd === 'uv');
+  assert.equal(at.args[at.args.indexOf('--frames') + 1], '16,61');
+  assert.throws(() => bl.alphaSteps(film, 'mov-alpha', '16x9', '/x/o.mov'), /"alpha": true/);
+  film.config.alpha = true;
+  assert.ok(bl.alphaSteps(film, 'mov-alpha', '16x9', '/x/o.mov').at(-1).args.includes('yuva444p10le'));
+  assert.equal(bl.tier, 'restricted');
+});
+
+test('fcwm new --engine blender: scene.py with build() and a transparent film with --alpha', async () => {
+  const root = tmp();
+  assert.equal(await main(['new', 'pr', '--engine', 'blender', '--alpha', '--duration', '5'], { cwd: root, ...quiet }), 0);
+  const film = loadFilm('pr', root);
+  assert.equal(film.engine, 'blender');
+  assert.equal(film.config.alpha, true);
+  assert.deepEqual(film.config.exports, ['mov-alpha']);
+  assert.match(fs.readFileSync(path.join(root, 'pr', 'scene.py'), 'utf8'), /def build\(scene, film\)/);
+});
+
+test('brand kit: init, check, and --brand copies it into the film and links brand.css', async () => {
+  const { initKit, checkKit, brandCss, EMPTY_KIT } = await import('../lib/brand.mjs');
+  const home = tmp();
+  const env = { FCWM_HOME: home };
+  const saved = process.env.FCWM_HOME;
+  process.env.FCWM_HOME = home;
+  try {
+    const dir = initKit('studio', env);
+    assert.deepEqual(checkKit({ ...EMPTY_KIT, name: 'studio' }, dir), []);  // an empty kit is valid
+    assert.throws(() => initKit('studio', env), /already exists/);
+    const kit = { ...EMPTY_KIT, name: 'studio', colors: { ground: '#0a0a0a', ink: '#ffffff', accent: '#ff5500', palette: ['#123456'] },
+      fonts: { display: { family: 'Display', file: 'assets/display.woff2' }, body: { family: '', file: '' } } };
+    assert.match(checkKit(kit, dir).join(), /display\.woff2 not found/);
+    fs.writeFileSync(path.join(dir, 'assets', 'display.woff2'), 'x');
+    assert.deepEqual(checkKit(kit, dir), []);
+    assert.match(checkKit({ ...kit, colors: { ink: 'red' } }, dir).join(), /not #rrggbb/);
+    assert.match(checkKit({ ...kit, logo: { file: '../../etc/passwd' } }, dir).join(), /inside the kit folder/);
+    fs.writeFileSync(path.join(dir, 'brand.json'), JSON.stringify(kit));
+    const css = brandCss(kit);
+    assert.match(css, /--ground: #0a0a0a;/);
+    assert.match(css, /--palette-1: #123456;/);
+    assert.match(css, /@font-face \{ font-family: "Display"; src: url\("assets\/display\.woff2"\); \}/);
+
+    const root = tmp();
+    assert.equal(await main(['new', 'b1', '--brand', 'studio', '--duration', '3'], { cwd: root, ...quiet }), 0);
+    assert.match(fs.readFileSync(path.join(root, 'b1', 'index.html'), 'utf8'), /<link rel="stylesheet" href="brand\/brand\.css" \/>\n  <\/head>/);
+    assert.ok(fs.existsSync(path.join(root, 'b1', 'brand', 'assets', 'display.woff2')));
+    assert.equal(loadFilm('b1', root).config.brand, 'studio');
+    await assert.rejects(main(['new', 'b2', '--brand', 'nope'], { cwd: root, ...quiet }), /no brand kit "nope"/);
+    assert.equal(fs.existsSync(path.join(root, 'b2')), false);  // nothing scaffolded for a missing kit
+    const out = [];
+    assert.equal(await main(['brand', 'list'], { cwd: root, log: (l) => out.push(l) }), 0);
+    assert.deepEqual(out, ['studio']);
+  } finally {
+    if (saved === undefined) delete process.env.FCWM_HOME; else process.env.FCWM_HOME = saved;
+  }
 });
