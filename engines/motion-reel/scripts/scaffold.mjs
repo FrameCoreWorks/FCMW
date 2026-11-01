@@ -4,8 +4,9 @@
 //   node <skill>/scripts/scaffold.mjs <slug> [--title "..."] [--duration 15] [--formats 16x9,9x16] [--3d] [--pathtrace]
 //
 // Creates <slug>/{index.html, film.js, film.json, lib/motion.js, assets/, docs/, audio/, fonts/}.
-// --3d also copies lib/gl.js (three.js sets composited into the 2-D film, references/3d.md) and adds
-// an import map to index.html; the project then needs `npm i three opentype.js`.
+// --3d also copies lib/gl.js (three.js sets composited into the 2-D film, references/3d.md), adds
+// an import map to index.html and starts from a 3-D film (sets/stage.js); the project then needs
+// `npm i three opentype.js`.
 // --pathtrace (implies --3d) adds lib/pathtrace.js, a path-traced sample film (sets/studio.js) and a
 // "pathtrace" block in film.json; the project also needs the pinned path tracer (PATHTRACE_DEPS).
 // Refuses to touch an existing directory.
@@ -65,6 +66,12 @@ if (three) {
   const idx = path.join(dir, 'index.html');
   fs.writeFileSync(idx, fs.readFileSync(idx, 'utf8').replace('</head>', map));
 }
+if (three && !pathtrace) {
+  // a real 3-D starter: a neutral stage (sets/stage.js) under a 2-D title
+  const t3 = path.join(tpl, '3d');
+  fs.writeFileSync(path.join(dir, 'film.js'), fs.readFileSync(path.join(t3, 'film.js'), 'utf8').replaceAll('__TITLE__', title));
+  fs.copyFileSync(path.join(t3, 'stage.js'), path.join(dir, 'sets', 'stage.js'));
+}
 if (pathtrace) {
   const ptpl = path.join(tpl, 'pathtrace');
   fs.copyFileSync(path.join(SKILL, 'assets', 'lib', 'pathtrace.js'), path.join(dir, 'lib', 'pathtrace.js'));
@@ -74,7 +81,7 @@ if (pathtrace) {
 fs.writeFileSync(path.join(dir, 'film.json'), JSON.stringify({ title, duration, formats, poster: +(duration * 0.87).toFixed(2),
   ...(pathtrace ? { pathtrace: { spp: 256, scale: 1, checkSpp: 32, checkScale: 0.5 } } : {}) }, null, 1) + '\n');
 
-console.log(`${slug}/ ready: index.html film.js film.json lib/motion.js${three ? ' lib/gl.js sets/' : ''}${pathtrace ? ' lib/pathtrace.js sets/studio.js' : ''} assets/ docs/ audio/ fonts/`);
+console.log(`${slug}/ ready: index.html film.js film.json lib/motion.js${three ? ' lib/gl.js sets/' : ''}${three && !pathtrace ? ' sets/stage.js' : ''}${pathtrace ? ' lib/pathtrace.js sets/studio.js' : ''} assets/ docs/ audio/ fonts/`);
 console.log(`primary format ${formats[0]}${formats.length > 1 ? `, also ${formats.slice(1).join(', ')}` : ''}; ${duration}s`);
 
 // ---------------- toolchain check (warn, don't fail: the plan and shot list don't need it yet)

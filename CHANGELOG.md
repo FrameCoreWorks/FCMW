@@ -7,6 +7,11 @@
   list several formats (each rendered on its own canvas); `--alpha` delivers ProRes 4444 / WebM alpha.
   Contact sheets and stills are cut from a draft render with ffmpeg. `fcwm setup` installs Pango and
   Cairo headers on Linux. Skill `fcwm-manim`; Manim added to the smoke test.
+- `fcwm new <film> --3d` starts from a real 3-D film: a neutral stage (`sets/stage.js`, three primitives
+  dropping on the beat, orbiting camera, soft shadows) under a 2-D title, in every format. The motion-reel
+  starter's placeholder copy is neutral now, and its headline no longer leaves blank frames before the
+  second scene (QA failed every starter film of 4 s or more). A failed render in GitHub Actions now
+  uploads its files under the film's name.
 - Extra delivery formats: `fcwm render <film> --export gif,webm,mov` (or `"exports"` in film.json)
   transcodes the delivered MP4 to GIF, WebM VP9 and ProRes 422 HQ. Transparency: `fcwm new <film>
   --alpha` starts a HyperFrames film on a transparent ground and renders `mov-alpha` (ProRes 4444) or
