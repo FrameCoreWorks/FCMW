@@ -1,0 +1,104 @@
+{
+  "model": "haiku",
+  "release": "0.4.0",
+  "tasks": {
+    "chart-10s": {
+      "task": "chart-10s",
+      "made": true,
+      "engine": "hyperframes",
+      "formats": [
+        "16x9"
+      ],
+      "duration": 10,
+      "codeLines": 131,
+      "formatOk": true,
+      "durationOk": true,
+      "render": {
+        "pass": true,
+        "seconds": 23
+      },
+      "qa": {
+        "loudness": "skip",
+        "frameRate": "pass",
+        "blankFrames": "pass",
+        "size": "pass",
+        "determinism": "pass"
+      },
+      "automatedPass": true,
+      "visual": {
+        "hook": 5,
+        "readability": 8,
+        "motion": 7,
+        "variety": 6,
+        "briefFit": 9
+      },
+      "notes": "Frame 0 is empty (no title), bars show interim values while growing; correct at rest."
+    },
+    "lyric-beat": {
+      "task": "lyric-beat",
+      "made": true,
+      "engine": "motion-reel",
+      "formats": [
+        "9x16"
+      ],
+      "duration": 12,
+      "codeLines": 239,
+      "formatOk": true,
+      "durationOk": true,
+      "render": {
+        "pass": true,
+        "seconds": 115
+      },
+      "qa": {
+        "loudness": "pass",
+        "frameRate": "pass",
+        "blankFrames": "pass",
+        "size": "pass",
+        "determinism": "pass"
+      },
+      "automatedPass": true,
+      "visual": {
+        "hook": 5,
+        "readability": 7,
+        "motion": 6,
+        "variety": 5,
+        "briefFit": 7,
+        "soundSync": 8
+      },
+      "notes": "Small type in the upper third, the same three-bar cycle twice with identical entrances, exit ghosting."
+    },
+    "promo-15s": {
+      "task": "promo-15s",
+      "made": true,
+      "engine": "hyperframes",
+      "formats": [
+        "9x16"
+      ],
+      "duration": 15,
+      "codeLines": 187,
+      "formatOk": true,
+      "durationOk": true,
+      "render": {
+        "pass": true,
+        "seconds": 36
+      },
+      "qa": {
+        "loudness": "skip",
+        "frameRate": "pass",
+        "blankFrames": "pass",
+        "size": "pass",
+        "determinism": "pass"
+      },
+      "automatedPass": true,
+      "visual": {
+        "hook": 5,
+        "readability": 7,
+        "motion": 6,
+        "variety": 5,
+        "briefFit": 6
+      },
+      "notes": "No hook, content in the top 45 % of the 9:16 frame, repetitive; stopped below the quality gate."
+    }
+  },
+  "scored": "2026-11-01"
+}

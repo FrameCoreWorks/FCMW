@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+- Evals (`evals/`): five reference tasks (promo, chart, lyric clip, logo sting, 3-D product) and a scorer
+  that renders each model's films and records render, QA, determinism, format and duration next to the
+  judged visual scores; `node evals/run.mjs report` writes one table per release. First comparison of
+  three Claude models on three tasks in `evals/results/0.4.0/`.
+- ChatGPT Work install guide (`docs/install-chatgpt.md`): marketplace import or ZIP upload.
+- HyperFrames films that import `./lib/fcwm/` without carrying it (hand-off from a chat app) get the lib
+  at render time.
+- `lib/chart.js`: bars that grow without overshoot, value labels that show only the final value as the
+  bar lands, round axis ticks, a count-up that matches the bar, lines that draw on. Tested.
+- Every new film carries a placeholder face (Inter, OFL-1.1, Latin and Latin Extended) in `fonts/`, so
+  text renders the same on every machine and offline; HyperFrames starters load it as `Display`,
+  motion-reel films as `Display` and `UI`. Replace it with the user's typeface.
+- motion-reel films get FCWM's blocks in `lib/fcwm/` like HyperFrames films, and
+  `templates/motion-reel-score/score.py` is a minimal synthesized score (kick on every beat, soft pad)
+  on the film's own grid.
+- Skills, from what the eval runs showed models missing: a signature sheet for every lib block
+  (`directing-motion-films/references/lib-api.md`); craft rules for the first frame, the hook, 9:16
+  composition, honest numbers, ghosting and repeats; which contact sheet to score, silent films, what
+  `--check` exit code 2 means, `--at` in seconds; quick mode runs its own rounds and shows the user once.
+- The pipeline log says "not needed, skipped" instead of a bare "skip:".
+
 ## 0.3.0 (unreleased)
 
 - Blender engine (experimental, tier restricted: GPL-3.0): the official bpy module from PyPI (bpy 5.2.3,

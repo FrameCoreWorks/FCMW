@@ -22,7 +22,7 @@ ask for. If the brief is silent on look, ask, or offer two or three neutral opti
 Ask once, at the start:
 
 - **Quick mode**: idea to finished film. Confirm the one-line idea, format and length, then build,
-  run the quality gate and deliver. One review, at the end.
+  run the quality gate yourself (as many rounds as it takes) and deliver. The user reviews once, at the end.
 - **Full process**: brief, shot list on the beat grid (user signs off), key frames from
   `fcwm render <film> --at ...` (user signs off), build, review rounds, render, delivery in every
   requested format.
@@ -55,6 +55,7 @@ tell the user the engine and its tier; for anything other than `free`, add the l
 | 2-D type, UI and product stories, captions, layouts, slides, web-style motion (default) | HyperFrames | free (GSAP inside a film: restricted) |
 | 3-D scenes, point clouds, voxel characters, generative motion, synthesized score, music and lyric videos | motion-reel | free |
 | Equations, graphs, plots, geometry, algorithms, technical explainers | Manim | free |
+| Business charts (bars, lines, numbers that grow) with designed type and layout | HyperFrames with `lib/chart.js` (Manim when the chart is mathematical: axes, functions, a plotted curve) | free |
 | Lottie playback (the user's .lottie or .json) and animated SVG, delivered as video | HyperFrames (`--lottie`) | free (dotlottie-web, MIT) |
 | Photoreal 3-D: product shots, glass, metal, materials and light, physics-ready sets | Blender (Cycles) | restricted (GPL-3.0; renders are the user's) |
 
@@ -88,9 +89,15 @@ key in chat, and follow `<repo>/skills/connecting-services`.
 2. Build from the blocks in `<repo>/lib/`, the craft rules in the `directing-motion-films` skill and the
    annotated films in `<repo>/recipes/` before writing anything from scratch.
 3. Quality gate, both modes: `fcwm render <film> --check` writes the contact sheet (one frame per beat)
-   and a phone-size sheet into `<film>/render/`. Score hook, readability, motion quality, variety, brief
-   fit and sound sync from 1 to 10. Fix the three weakest spots and repeat until every score is 8 or
-   more. If you cannot see images, give the sheets to the user and ask them to score.
+   and a phone-size sheet into `<film>/render/`: score `contact_<format>_p1.png` and
+   `phone_<format>_p1.png` (an engine's own sheets, such as HyperFrames' `snaps/`, are working files).
+   Score hook, readability, motion quality, variety, brief fit and sound sync from 1 to 10 (a silent film
+   has no sound-sync score). Fix the three weakest spots and repeat until every score is 8 or more. The
+   common misses are in the `directing-motion-films` skill's "Common mistakes": first frame, hook, 9:16
+   composition, honest numbers. If `--check` exits with code 2 it found a layout problem (text overlap
+   or overflow) and wrote no sheet: fix what it names and run it again. If you cannot see images, give
+   the sheets to the user and ask them to score.
+   `--at` takes seconds (`--at 0,2.5,7`); convert beats with `beats.json` (`offset + beat * period`).
 4. `fcwm render <film>` renders, mixes, writes `<film>-preview.mp4` and runs the automated checks:
    -14 LUFS / -1 dBTP, constant fps, canvas size, no blank frames. `fcwm qa <film> --determinism` also
    renders three frames twice and compares them. Report every FAIL as it is; never call a film done

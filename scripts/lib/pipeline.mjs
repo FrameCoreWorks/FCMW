@@ -11,7 +11,7 @@ export function describe(steps) {
 export async function runSteps(steps, { log = console.log } = {}) {
   const results = [];
   for (const s of steps) {
-    if (s.when && !s.when()) { log(`- skip: ${s.label}`); continue; }
+    if (s.when && !s.when()) { log(`- ${s.label}: not needed, skipped`); continue; }
     log(`> ${s.label}`);
     if (s.fn) { results.push(await s.fn()); continue; }
     const { code } = await run(s.cmd, s.args, { cwd: s.cwd, env: s.env });

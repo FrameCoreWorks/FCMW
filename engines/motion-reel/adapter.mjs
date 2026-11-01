@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { clearSheets } from '../../scripts/lib/contact.mjs';
+import { copyLib, copyFonts } from '../../scripts/lib/film-assets.mjs';
 
 export const ENGINE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const script = (name) => path.join(ENGINE_DIR, 'scripts', name);
@@ -43,6 +44,12 @@ export default {
         const cfgPath = path.join(root, slug, 'film.json');
         const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
         fs.writeFileSync(cfgPath, JSON.stringify({ ...cfg, engine: 'motion-reel' }, null, 2) + '\n');
+      } },
+      // FCWM's blocks next to film.js (import './lib/fcwm/core.js'), and a placeholder face under the
+      // two names index.html loads, so the film renders the same on every machine until the user's own fonts go in.
+      { label: 'FCWM lib (lib/fcwm/) and placeholder fonts (fonts/)', fn: () => {
+        copyLib(path.join(root, slug, 'lib', 'fcwm'));
+        copyFonts(path.join(root, slug, 'fonts'), ['display', 'ui']);
       } },
     ];
   },

@@ -1,0 +1,104 @@
+{
+  "model": "opus",
+  "release": "0.4.0",
+  "tasks": {
+    "chart-10s": {
+      "task": "chart-10s",
+      "made": true,
+      "engine": "hyperframes",
+      "formats": [
+        "16x9"
+      ],
+      "duration": 10,
+      "codeLines": 190,
+      "formatOk": true,
+      "durationOk": true,
+      "render": {
+        "pass": true,
+        "seconds": 26
+      },
+      "qa": {
+        "loudness": "skip",
+        "frameRate": "pass",
+        "blankFrames": "pass",
+        "size": "pass",
+        "determinism": "pass"
+      },
+      "automatedPass": true,
+      "visual": {
+        "hook": 7,
+        "readability": 8,
+        "motion": 8,
+        "variety": 7,
+        "briefFit": 9
+      },
+      "notes": "One amber accent, a \"x3\" payoff and a baseline marker. Frame 0 shows a half-typed title; growing bars show interim values."
+    },
+    "lyric-beat": {
+      "task": "lyric-beat",
+      "made": true,
+      "engine": "motion-reel",
+      "formats": [
+        "9x16"
+      ],
+      "duration": 12,
+      "codeLines": 465,
+      "formatOk": true,
+      "durationOk": true,
+      "render": {
+        "pass": true,
+        "seconds": 453
+      },
+      "qa": {
+        "loudness": "pass",
+        "frameRate": "pass",
+        "blankFrames": "pass",
+        "size": "pass",
+        "determinism": "pass"
+      },
+      "automatedPass": true,
+      "visual": {
+        "hook": 8,
+        "readability": 8,
+        "motion": 8,
+        "variety": 9,
+        "briefFit": 8,
+        "soundSync": 8
+      },
+      "notes": "Two acts (stacked lines, then one giant word per beat), most varied entrances. Act 1 sits in the upper half; one frame leaks a cropped word at the top edge."
+    },
+    "promo-15s": {
+      "task": "promo-15s",
+      "made": true,
+      "engine": "hyperframes",
+      "formats": [
+        "9x16"
+      ],
+      "duration": 15,
+      "codeLines": 306,
+      "formatOk": true,
+      "durationOk": true,
+      "render": {
+        "pass": true,
+        "seconds": 38
+      },
+      "qa": {
+        "loudness": "skip",
+        "frameRate": "pass",
+        "blankFrames": "pass",
+        "size": "pass",
+        "determinism": "pass"
+      },
+      "automatedPass": true,
+      "visual": {
+        "hook": 8,
+        "readability": 8,
+        "motion": 8,
+        "variety": 8,
+        "briefFit": 9
+      },
+      "notes": "Strongest of the three: clear hook, product in focus, varied scenes."
+    }
+  },
+  "scored": "2026-11-01"
+}

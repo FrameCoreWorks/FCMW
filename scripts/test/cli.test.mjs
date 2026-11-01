@@ -132,6 +132,10 @@ test('hyperframes scaffold: template filled for the format, lib copied, one form
   assert.match('<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>', LOADS_GSAP);
   assert.ok(fs.existsSync(path.join(root, 'sq', 'lib', 'fcwm', 'core.js')));
   assert.equal(fs.existsSync(path.join(root, 'sq', 'lib', 'fcwm', 'test')), false);
+  assert.ok(fs.existsSync(path.join(root, 'sq', 'lib', 'fcwm', 'chart.js')));
+  // A placeholder face ships with the film (offline, same on every machine), with its licence
+  for (const f of ['display.woff2', 'display-ext.woff2', 'OFL.txt']) assert.ok(fs.existsSync(path.join(root, 'sq', 'fonts', f)), f);
+  assert.match(html, /font-family: Display; src: url\(fonts\/display\.woff2\)/);
   assert.deepEqual(loadFilm('sq', root).formats, ['1x1']);
   assert.throws(() => hf.scaffoldSteps(root, 'two', { formats: ['1x1', '9x16'] }), /one format/);
 });
@@ -206,7 +210,7 @@ test('fcwm new --pathtrace: path tracer lib, sample set, import map and quality 
   const root = tmp();
   assert.equal(await main(['new', 'pt', '--pathtrace', '--format', '16x9'], { cwd: root, ...quiet }), 0);
   const dir = path.join(root, 'pt');
-  for (const f of ['lib/gl.js', 'lib/pathtrace.js', 'sets/studio.js', 'film.js']) assert.ok(fs.existsSync(path.join(dir, f)), f);
+  for (const f of ['lib/gl.js', 'lib/pathtrace.js', 'sets/studio.js', 'film.js', 'lib/fcwm/type.js', 'fonts/display.woff2', 'fonts/ui-ext.woff2', 'fonts/OFL.txt']) assert.ok(fs.existsSync(path.join(dir, f)), f);
   const html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
   assert.match(html, /"three-gpu-pathtracer": "\/node_modules\/three-gpu-pathtracer\/src\/index.js"/);
   assert.match(html, /"three-mesh-bvh": /);
