@@ -26,7 +26,7 @@ const HITS = [
 
 // ---------------------------------------------------------------- S1 headline   (u 0..8)
 // Per-format layout: portrait stacks and goes bigger, landscape sits left of centre.
-const S1 = { words: ['Build', 'your', 'store.'] };
+const S1 = { words: ['Your', 'big', 'idea.'] };   // placeholder copy: the user's words go here
 function sceneHeadline(ctx, u) {
   fill(ctx, C.paper);
   const s = FORMAT.safe;
@@ -76,7 +76,7 @@ function sceneEnd(ctx, u) {
   fill(ctx, C.paper);
   const s = FORMAT.safe;
   const size = FORMAT.pick({ '16x9': 200, '9x16': 170, '1x1': 170 });
-  const L = layout(ctx, 'brand.com', font(size, 800, DISPLAY), -0.04 * size);
+  const L = layout(ctx, 'End card', font(size, 800, DISPLAY), -0.04 * size);
   const base = FORMAT.portrait ? s.y + s.h * 0.55 : H * 0.58;
   L.glyphs.forEach((g, j) => {
     const p = E.outBack(prog(u, 26 + j * 0.04, 26.4 + j * 0.04), 1.5);
@@ -86,7 +86,7 @@ function sceneEnd(ctx, u) {
     ctx.restore();
   });
   const tp = E.outQuint(prog(u, 26.5, 26.9));
-  if (tp > 0) text(ctx, 'Tagline in the brand\'s own words', s.x + 6, base + 90 + (1 - tp) * 40, font(46, 500, UI), C.ink);
+  if (tp > 0) text(ctx, 'One line in your own words', s.x + 6, base + 90 + (1 - tp) * 40, font(46, 500, UI), C.ink);
 }
 
 M.film({
