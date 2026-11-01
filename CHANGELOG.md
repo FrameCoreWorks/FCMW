@@ -7,6 +7,8 @@
   judged visual scores; `node evals/run.mjs report` writes one table per release. First comparison of
   three Claude models on three tasks in `evals/results/0.4.0/`.
 - ChatGPT Work install guide (`docs/install-chatgpt.md`): marketplace import or ZIP upload.
+- `INSTALL.md`: install by pasting the repository link into any agent (ChatGPT Work, Codex, Claude,
+  Cursor, Gemini); the agent follows it with its native plugin or skill installer. README carries the prompt.
 - HyperFrames films that import `./lib/fcwm/` without carrying it (hand-off from a chat app) get the lib
   at render time.
 - `lib/chart.js`: bars that grow without overshoot, value labels that show only the final value as the

@@ -5,6 +5,20 @@ and gives you one line to paste on your computer, or sets up a render in GitHub 
 GitHub account. Plugins and skills are available on ChatGPT Business, Enterprise, Healthcare and Edu,
 subject to workspace settings.
 
+## Easiest: paste the link in a chat (any member)
+
+Start a new chat in ChatGPT Work and paste:
+
+```text
+Install the FCWM plugin from https://github.com/FrameCoreWorks/FCWM for me. Follow INSTALL.md in that
+repository. Prefer your native plugin or skill installer.
+```
+
+ChatGPT inspects the repository, reads [INSTALL.md](../INSTALL.md) and installs the skills into your
+personal directory. Check: Settings > Plugins > Browse plugins (Plugins or Skills tab), FCWM or its
+skills `fcwm`, `directing-motion-films` and the engine skills are listed. To update later, paste the
+same prompt again.
+
 ## Option A: import from GitHub (workspace owner or admin, keeps itself up to date)
 
 1. Open the [Admin console](https://admin.openai.com/), choose your ChatGPT workspace, open **Plugins**.
@@ -24,7 +38,7 @@ Build the ZIP from a clone (manifests and skills at the ZIP root, plus the block
 templates the skills point to):
 
 ```sh
-git archive --format=zip -o fcwm-plugin.zip HEAD .claude-plugin .codex-plugin skills lib recipes templates knowledge brand-kit engines/catalog.json integrations qa/README.md AGENTS.md README.md LICENSE NOTICE
+git archive --format=zip -o fcwm-plugin.zip HEAD .claude-plugin .codex-plugin skills lib recipes templates knowledge brand-kit engines/catalog.json integrations qa/README.md AGENTS.md README.md INSTALL.md LICENSE NOTICE
 ```
 
 Admin console > your workspace > **Plugins** > **Add** > **Upload plugin**, choose `fcwm-plugin.zip`,
