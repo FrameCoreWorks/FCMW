@@ -40,7 +40,7 @@ Ask only for what is missing:
 | Look and tone | ask; never invent one |
 | Brand kit | none; use `brand-kit/` only if the user has saved one or provides assets |
 | Sound | synthesized score and effects on the beat grid, or the user's own track; or silent |
-| Paid tools | not used unless the user agrees and supplies their own API key |
+| Paid tools | not used unless the user agrees and connects their own account; see `<repo>/skills/connecting-services` |
 
 ## 3. Pick the engine
 

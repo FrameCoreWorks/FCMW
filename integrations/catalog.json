@@ -1,0 +1,249 @@
+{
+  "$comment": "Optional external services (MCP servers and APIs) that generate assets for a film: voice, music, sound effects, images, video. Nothing here is installed, bundled or required. The user connects a service in their own agent with their own account or key; FCWM only documents how and checks whether it is connected. tier: free | restricted | paid (paid = billed to the user's account). kind: mcp-remote (hosted URL) | mcp-local (runs on the user's machine) | api (plain HTTP API, key in an environment variable). auth: oauth | api-key | cloud-credentials. status: listed (setup documented from the vendor's docs, not run end to end by FCWM) | tested (connected and one generation run by FCWM) | deprecated (upstream archived or replaced; kept so old setups are recognised). 'checked' is the date licence, stars and activity were last verified.",
+  "version": 1,
+  "capabilities": [
+    "voice",
+    "music",
+    "sfx",
+    "image",
+    "video",
+    "transcription"
+  ],
+  "services": [
+    {
+      "id": "elevenlabs",
+      "name": "ElevenLabs (hosted MCP)",
+      "purpose": "Speech and voice-over, voice design, sound effects, music, transcription; the hosted server also exposes image and video models.",
+      "capabilities": [
+        "voice",
+        "sfx",
+        "music",
+        "transcription",
+        "image",
+        "video"
+      ],
+      "kind": "mcp-remote",
+      "endpoint": "https://api.elevenlabs.io/v1/mcp",
+      "auth": "oauth",
+      "tier": "paid",
+      "pricing_note": "Credits on the user's ElevenLabs plan; a free plan with monthly credits exists.",
+      "license": "Proprietary hosted service",
+      "upstream": "https://elevenlabs.io/docs/agents-platform/operate/hosted-mcp",
+      "detect": {
+        "names": [
+          "elevenlabs"
+        ],
+        "match": [
+          "api.elevenlabs.io/v1/mcp"
+        ]
+      },
+      "status": "listed",
+      "checked": "2026-11-01"
+    },
+    {
+      "id": "elevenlabs-local",
+      "name": "ElevenLabs MCP (local, archived)",
+      "purpose": "Older local server for speech, voice cloning, sound effects and transcription.",
+      "capabilities": [
+        "voice",
+        "sfx",
+        "music",
+        "transcription"
+      ],
+      "kind": "mcp-local",
+      "command": "uvx elevenlabs-mcp",
+      "auth": "api-key",
+      "env": [
+        "ELEVENLABS_API_KEY"
+      ],
+      "tier": "paid",
+      "pricing_note": "Same credits as the hosted server.",
+      "license": "MIT",
+      "upstream": "https://github.com/elevenlabs/elevenlabs-mcp",
+      "notes": "Repository archived (1.5k stars, last push 2026-08-20); upstream points to the hosted server. Prefer the hosted entry.",
+      "detect": {
+        "names": [
+          "elevenlabs"
+        ],
+        "match": [
+          "elevenlabs-mcp",
+          "elevenlabs_mcp"
+        ]
+      },
+      "status": "deprecated",
+      "checked": "2026-11-01"
+    },
+    {
+      "id": "fal",
+      "name": "fal (hosted MCP)",
+      "purpose": "Search, price and run hundreds of image, video, audio, voice and music models.",
+      "capabilities": [
+        "image",
+        "video",
+        "voice",
+        "music",
+        "sfx"
+      ],
+      "kind": "mcp-remote",
+      "endpoint": "https://mcp.fal.ai/mcp-relay",
+      "auth": "oauth",
+      "tier": "paid",
+      "pricing_note": "The server is free; each model run is billed at fal's per-model price. The server can report prices before a run.",
+      "license": "Proprietary hosted service",
+      "upstream": "https://fal.ai/docs/documentation/setting-up/mcp",
+      "detect": {
+        "names": [
+          "fal"
+        ],
+        "match": [
+          "mcp.fal.ai"
+        ]
+      },
+      "status": "listed",
+      "checked": "2026-11-01"
+    },
+    {
+      "id": "replicate",
+      "name": "Replicate (hosted or local MCP)",
+      "purpose": "Discover, compare and run thousands of community and official models (image, video, audio).",
+      "capabilities": [
+        "image",
+        "video",
+        "voice",
+        "music",
+        "sfx",
+        "transcription"
+      ],
+      "kind": "mcp-remote",
+      "endpoint": "https://mcp.replicate.com/sse",
+      "command": "npx -y replicate-mcp",
+      "auth": "api-key",
+      "env": [
+        "REPLICATE_API_TOKEN"
+      ],
+      "tier": "paid",
+      "pricing_note": "Billed per second of compute or per output, depending on the model.",
+      "license": "Apache-2.0 (local npm package replicate-mcp, 0.9.0, updated 2025-12-18); hosted server proprietary",
+      "upstream": "https://replicate.com/docs/reference/mcp",
+      "notes": "The hosted server asks for the API token in a browser sign-in page, so the token never goes into a config file.",
+      "detect": {
+        "names": [
+          "replicate"
+        ],
+        "match": [
+          "mcp.replicate.com",
+          "replicate-mcp"
+        ]
+      },
+      "status": "listed",
+      "checked": "2026-11-01"
+    },
+    {
+      "id": "runway",
+      "name": "Runway (hosted MCP)",
+      "purpose": "Video generation and editing, images, music, speech and sound effects.",
+      "capabilities": [
+        "video",
+        "image",
+        "music",
+        "voice",
+        "sfx"
+      ],
+      "kind": "mcp-remote",
+      "endpoint": "https://mcp.runwayml.com/mcp",
+      "auth": "oauth",
+      "tier": "paid",
+      "pricing_note": "Uses credits on the user's Runway plan.",
+      "license": "Proprietary hosted service (wrapper plugin runwayml/runway-mcp-plugin is MIT)",
+      "upstream": "https://github.com/runwayml/runway-mcp-plugin",
+      "notes": "The older runwayml/runway-api-mcp-server is archived.",
+      "detect": {
+        "names": [
+          "runway"
+        ],
+        "match": [
+          "mcp.runwayml.com",
+          "runway-api-mcp-server"
+        ]
+      },
+      "status": "listed",
+      "checked": "2026-11-01"
+    },
+    {
+      "id": "minimax",
+      "name": "MiniMax MCP (local)",
+      "purpose": "Text to speech, voice cloning and design, video (Hailuo) and image generation.",
+      "capabilities": [
+        "voice",
+        "video",
+        "image"
+      ],
+      "kind": "mcp-local",
+      "command": "uvx minimax-mcp -y",
+      "auth": "api-key",
+      "env": [
+        "MINIMAX_API_KEY",
+        "MINIMAX_API_HOST"
+      ],
+      "tier": "paid",
+      "pricing_note": "Pay as you go on the user's MiniMax account. Key and host must be from the same region.",
+      "license": "MIT",
+      "upstream": "https://github.com/MiniMax-AI/MiniMax-MCP",
+      "notes": "1.6k stars, last push 2026-08-20. Upstream now recommends its CLI (mmx-cli) for the newest models.",
+      "detect": {
+        "names": [
+          "minimax"
+        ],
+        "match": [
+          "minimax-mcp"
+        ]
+      },
+      "status": "listed",
+      "checked": "2026-11-01"
+    },
+    {
+      "id": "google-genmedia",
+      "name": "Google GenMedia MCP servers (local, experimental)",
+      "purpose": "Veo video, Gemini (Nano Banana) images, Lyria music, Gemini TTS and Chirp speech, plus an AVTool server for FFmpeg compositing, on Vertex AI.",
+      "capabilities": [
+        "video",
+        "image",
+        "music",
+        "voice",
+        "transcription"
+      ],
+      "kind": "mcp-local",
+      "auth": "cloud-credentials",
+      "env": [
+        "PROJECT_ID",
+        "LOCATION",
+        "GENMEDIA_BUCKET"
+      ],
+      "tier": "paid",
+      "pricing_note": "Billed to the user's Google Cloud project at Vertex AI prices.",
+      "license": "Apache-2.0",
+      "upstream": "https://github.com/GoogleCloudPlatform/genmedia-creative-studio",
+      "notes": "Official Google Cloud code in the repository's experiments folder (1.2k stars, last push 2026-10-31). One server per capability (for example mcp-veo-go, mcp-nanobanana-go). Needs gcloud application-default credentials.",
+      "detect": {
+        "names": [
+          "genmedia",
+          "veo",
+          "nanobanana",
+          "lyria",
+          "chirp",
+          "avtool"
+        ],
+        "match": [
+          "mcp-veo-go",
+          "mcp-nanobanana-go",
+          "mcp-lyria-go",
+          "mcp-chirp3-go",
+          "mcp-avtool-go",
+          "mcp-genmedia"
+        ]
+      },
+      "status": "listed",
+      "checked": "2026-11-01"
+    }
+  ]
+}
