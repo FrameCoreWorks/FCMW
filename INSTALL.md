@@ -29,8 +29,8 @@ whole `references/` folder kept next to it (the skills read those files):
 | `connecting-services` | optional paid services the user may connect later |
 
 Install them together, as one plugin named `fcwm` when your host has plugins (the manifest is
-`.codex-plugin/plugin.json`, with `.claude-plugin/plugin.json` for Claude hosts; both point at
-`./skills/`), or as seven skills when it only has skills. Use the default branch, or a release tag if
+`.codex-plugin/plugin.json`, whose `skills` points at `./skills/`; Claude hosts use `.claude-plugin/`),
+or as seven skills when it only has skills. Use the default branch, or a release tag if
 the user names one.
 
 **By host:**
