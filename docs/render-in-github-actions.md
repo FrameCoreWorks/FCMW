@@ -63,7 +63,23 @@ For the next film, repeat steps 4 to 6 in the same repository.
 ## For maintainers of a public FCWM copy
 
 The `render` workflow in this repository only starts by hand (`workflow_dispatch`), which GitHub allows
-only to people with write access. Pull requests from forks run only the light checks (`validate`,
-`smoke` with 3-second films, `install` when the installer changes). Recommended setting:
-Settings > Actions > General > "Fork pull request workflows from outside collaborators" >
-**Require approval for all outside collaborators**, so even those checks start only after you approve.
+only to people with write access. Nothing renders for a pull request from a fork: the `smoke` and
+`install` jobs are skipped unless the pull request comes from a branch of this repository, and no
+workflow uses `pull_request_target`. A fork pull request gets only `validate` (manifest checks and unit
+tests, no browser, no ffmpeg, no render). `npm run validate` fails if a rendering job loses its fork
+guard.
+
+A fork pull request can edit the workflow files it runs, so the YAML guard alone is not a lock. The lock
+is this setting, which holds every fork run until you approve it:
+
+1. Settings > Actions > General > "Approval for running fork pull request workflows from contributors" >
+   **Require approval for all external contributors** (older wording: "Require approval for all outside
+   collaborators"). Save.
+2. Same page, "Workflow permissions": **Read repository contents and packages permissions**, and leave
+   "Allow GitHub Actions to create and approve pull requests" unticked. Save.
+3. Same page, "Actions permissions": **Allow <owner>, and select non-<owner>, actions and
+   reusable workflows**, tick "Allow actions created by GitHub", and add `astral-sh/setup-uv@*` to the
+   list. Save.
+
+Before approving a fork run, open the pull request's Files changed tab and check that nothing under
+`.github/` changed.

@@ -2,6 +2,10 @@
 
 ## 0.3.0 (unreleased)
 
+- No renders for pull requests from forks: the `smoke` and `install` jobs skip unless the pull request
+  comes from a branch of this repository; fork pull requests get only `validate` (no browser, no ffmpeg).
+  `npm run validate` fails if a rendering job loses that guard or any workflow uses
+  `pull_request_target`. Maintainer settings to click: `docs/render-in-github-actions.md`.
 - Path-traced 3-D quality mode on motion-reel (experimental): `fcwm new <film> --pathtrace` traces the
   same three.js sets with three-gpu-pathtracer 0.0.27 (MIT) for real reflections, glass, soft area
   light shadows and depth of field. Fixed samples per frame, seeded sequences, motion-blur sub-frames

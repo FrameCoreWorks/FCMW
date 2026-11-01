@@ -3,6 +3,10 @@ name: install
 # The one-line installers on macOS, Windows and Linux: a clean FCWM home, a film folder whose path has
 # a space, '&' and an apostrophe, install only what is missing, render contact sheets, then run again
 # and expect every tool to be skipped. Runs only when the installer or the CLI changes.
+
+# Renders run only for this repository's own branches (push, workflow_dispatch, pull requests from a
+# branch here). Pull requests from forks never render: the job is skipped. Fork PRs get only the
+# render-free `validate` workflow, and only after a maintainer approves the run.
 on:
   pull_request:
     paths: [scripts/install.sh, scripts/install.ps1, scripts/fcwm.mjs, scripts/lib/**, .github/workflows/install.yml]
@@ -13,6 +17,7 @@ permissions:
 
 jobs:
   unix:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     strategy:
       fail-fast: false
       matrix:
@@ -46,6 +51,7 @@ jobs:
           grep -q "nothing to install" second.log
 
   windows:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: windows-latest
     timeout-minutes: 30
     steps:

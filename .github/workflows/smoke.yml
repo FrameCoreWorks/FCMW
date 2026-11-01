@@ -1,6 +1,10 @@
 name: smoke
 
 # Creates, renders and checks one short film per engine with the real tools.
+
+# Renders run only for this repository's own branches (push, workflow_dispatch, pull requests from a
+# branch here). Pull requests from forks never render: the job is skipped. Fork PRs get only the
+# render-free `validate` workflow, and only after a maintainer approves the run.
 on:
   pull_request:
   push:
@@ -12,6 +16,7 @@ permissions:
 
 jobs:
   smoke:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
