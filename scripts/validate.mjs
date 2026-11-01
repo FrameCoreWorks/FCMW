@@ -194,6 +194,27 @@ function walk(dir) {
 }
 walk(root);
 
+// ---------- 7. no renders from outside pull requests ----------
+// Workflows that render (browser, ffmpeg, fcwm.mjs render, smoke, installer) must skip every job on
+// pull requests from forks, and no workflow may use pull_request_target (it runs with this repo's
+// token). The real lock is the repository setting that holds fork runs for approval; this keeps the
+// YAML from drifting. See docs/render-in-github-actions.md.
+const FORK_GUARD = "github.event.pull_request.head.repo.full_name == github.repository";
+const RENDERS = /playwright install|ffmpeg|fcwm\.mjs\s+render|smoke\.mjs|install\.(sh|ps1)/;
+const wfDir = join(root, ".github", "workflows");
+if (existsSync(wfDir)) {
+  for (const f of readdirSync(wfDir).filter((n) => /\.ya?ml$/.test(n))) {
+    const rel = `.github/workflows/${f}`;
+    const text = readFileSync(join(wfDir, f), "utf8");
+    if (/pull_request_target/.test(text)) fail(rel, "pull_request_target is not allowed (it runs fork code with this repository's token)");
+    if (!RENDERS.test(text) || !/^\s*pull_request\s*:/m.test(text)) continue;
+    const jobs = text.split(/^jobs:\s*$/m)[1] ?? "";
+    for (const m of jobs.matchAll(/^  ([A-Za-z][\w-]*):\s*$([\s\S]*?)(?=^  [A-Za-z][\w-]*:\s*$|(?![\s\S]))/gm)) {
+      if (!m[2].includes(FORK_GUARD)) fail(rel, `job "${m[1]}" renders on pull_request but has no fork guard (if: ... ${FORK_GUARD})`);
+    }
+  }
+}
+
 // ---------- report ----------
 // ---------- 6. skill reference copies ----------
 const { drift } = await import("./sync-skill-refs.mjs");
