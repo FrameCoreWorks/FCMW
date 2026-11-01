@@ -42,7 +42,7 @@ Ask only for what is missing, in one round:
 | Look and tone | ask; never invent one |
 | Brand kit | none; use `brand-kit/` only if the user has saved one or provides assets |
 | Sound | the user's own track, a synthesized score and effects on the beat grid, or silent |
-| Paid tools | none; see "Paid APIs and MCP servers" below |
+| Paid tools | not used unless the user agrees and connects their own account; see `<repo>/skills/connecting-services` |
 
 ## 3. Pick the engine
 
@@ -64,10 +64,10 @@ each and recommend one. Then load the engine skill and follow it:
 
 ## Paid APIs and MCP servers
 
-FCWM ships nothing that needs an account or bills money. A user may connect their own paid tool (a voice,
-image or video API, or an MCP server). Such tools appear in the catalog as `tier: "paid"`,
-`status: "user-configured"`. Offer one only when the user has connected it, say it bills their own key,
-and never ask for a key in chat.
+FCWM ships nothing that needs an account or bills money. Optional services (voice, music, images,
+video, as an API or an MCP server) are listed in `<repo>/integrations/catalog.json`, almost all
+`tier: "paid"`. Offer one only when the user wants it, say it bills their own account, never ask for a
+key in chat, and follow `<repo>/skills/connecting-services`.
 
 ## 4. Build, check, deliver
 

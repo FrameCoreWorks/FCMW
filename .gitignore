@@ -11,3 +11,5 @@ out/
 # film render output
 out/
 .hyperframes/
+.env.local
+.env.*.local

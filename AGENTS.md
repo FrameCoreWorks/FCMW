@@ -69,6 +69,7 @@ to paste.
 | `recipes/` | Complete annotated films: the code plus a "what happens here and why" walkthrough. |
 | `knowledge/` | Craft lessons and checklists: what separated a finished film from a draft, and the fix. |
 | `templates/` | Brand-neutral starting points and effects (transitions, title cards, captions). |
+| `integrations/` | Optional external services (MCP servers, APIs) the user may connect for voice, music, images or video, with tier and setup. Nothing bundled; see `skills/connecting-services`. |
 | `brand-kit/` | Schema for the optional user brand kit. Empty by default. |
 | `qa/` | Automated quality checks and the scoring rubric. |
 | `scripts/` | Cross-platform Node CLI (macOS, Windows, Linux): new film, render, validate. |

@@ -116,7 +116,7 @@ Outputs land in `<film>/render/` (`<film>-<format>.mp4`, `<film>-preview.mp4`, `
 
 - Router: 2-D type, UI, captions, slides → `hyperframes`; 3-D, point clouds, voxel characters, generative, synthesized score → `motion-reel`; anything else asks the user with both options and their tiers.
 - Paid tools and MCP servers (for example voice or image APIs) are never built in. The catalog schema
-  accepts `tier: "paid"` entries with `"status": "user-configured"`; the router only offers such a tool
+  does not list them: optional services live in `integrations/catalog.json` (another thread); the router only offers such a tool
   when the user has configured it, and says it bills their own key. How to connect them is documented
   by a separate thread, not here.
 - Quick mode (one review at the end) and full mode (brief → shot list → key frames → review rounds → render → delivery), both ending in the quality gate and `fcwm qa`.

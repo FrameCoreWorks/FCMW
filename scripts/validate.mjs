@@ -4,8 +4,9 @@
 // 1. Every skills/<dir>/SKILL.md follows the Agent Skills spec (agentskills.io/specification).
 // 2. All host manifests and package.json share one name and version, and point at ./skills/.
 // 3. engines/catalog.json entries are complete and use a known tier and status.
-// 4. No brand name appears in shipped files.
-// 5. Copies in skills/*/references/ match their sources (scripts/sync-skill-refs.mjs).
+// 4. integrations/catalog.json entries (optional services) are complete and never carry a key.
+// 5. No brand name and nothing that looks like an API key appears in shipped files.
+// 6. Copies in skills/*/references/ match their sources (scripts/sync-skill-refs.mjs).
 
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -111,7 +112,7 @@ if (gem?.contextFileName && !existsSync(join(root, gem.contextFileName)))
 
 // ---------- 3. engine catalog ----------
 const TIERS = new Set(["free", "restricted", "paid"]);
-const STATUSES = new Set(["planned", "experimental", "ready", "user-configured"]);
+const STATUSES = new Set(["planned", "experimental", "ready"]);
 const REQUIRED = ["id", "name", "purpose", "tier", "license", "status", "checked"];
 const catalog = readJSON("engines/catalog.json");
 if (catalog) {
@@ -125,13 +126,50 @@ if (catalog) {
     if (e.id && ids.has(e.id)) fail(where, "duplicate id");
     ids.add(e.id);
     if ((e.status === "ready" || e.status === "experimental") && !existsSync(join(root, "engines", e.id))) fail(where, `status is ${e.status} but engines/${e.id}/ does not exist`);
-    if (e.status === "user-configured" && e.tier !== "paid") fail(where, "user-configured entries are paid APIs or MCP servers: tier must be paid");
   }
 }
 
-// ---------- 4. no brand in shipped files ----------
+// ---------- 4. optional services ----------
+// Services are never bundled: an entry documents how a user connects their own account.
+const SVC_REQUIRED = ["id", "name", "purpose", "capabilities", "kind", "auth", "tier", "license", "upstream", "status", "checked"];
+const SVC_KINDS = new Set(["mcp-remote", "mcp-local", "api"]);
+const SVC_AUTH = new Set(["oauth", "api-key", "cloud-credentials"]);
+const SVC_STATUSES = new Set(["listed", "tested", "deprecated"]);
+const services = readJSON("integrations/catalog.json");
+if (services) {
+  const caps = new Set(services.capabilities || []);
+  const ids = new Set();
+  for (const [i, s] of (services.services || []).entries()) {
+    const where = `integrations/catalog.json services[${i}]${s.id ? ` (${s.id})` : ""}`;
+    for (const k of SVC_REQUIRED) if (!s[k]) fail(where, `missing "${k}"`);
+    if (s.tier && !TIERS.has(s.tier)) fail(where, `tier "${s.tier}" must be one of ${[...TIERS].join(", ")}`);
+    if (s.kind && !SVC_KINDS.has(s.kind)) fail(where, `kind "${s.kind}" must be one of ${[...SVC_KINDS].join(", ")}`);
+    if (s.auth && !SVC_AUTH.has(s.auth)) fail(where, `auth "${s.auth}" must be one of ${[...SVC_AUTH].join(", ")}`);
+    if (s.status && !SVC_STATUSES.has(s.status)) fail(where, `status "${s.status}" must be one of ${[...SVC_STATUSES].join(", ")}`);
+    if (s.checked && !/^\d{4}-\d{2}-\d{2}$/.test(s.checked)) fail(where, "checked must be YYYY-MM-DD");
+    for (const c of s.capabilities || []) if (!caps.has(c)) fail(where, `unknown capability "${c}"`);
+    if (s.kind === "mcp-remote" && !/^https:\/\//.test(s.endpoint || "")) fail(where, "mcp-remote needs an https endpoint");
+    if (s.kind === "mcp-local" && !s.command && !s.notes) fail(where, "mcp-local needs a command or notes on how to install it");
+    if (s.auth === "api-key" && !(s.env || []).length) fail(where, "api-key auth needs the env variable names it reads");
+    for (const k of s.env || []) if (!/^[A-Z][A-Z0-9_]*$/.test(k)) fail(where, `env "${k}" must be an UPPER_SNAKE variable name, never a value`);
+    if (!s.detect?.names?.length && !s.detect?.match?.length) fail(where, "detect needs names or match strings");
+    if (s.id && ids.has(s.id)) fail(where, "duplicate id");
+    ids.add(s.id);
+  }
+}
+
+// ---------- 5. no brand and no secrets in shipped files ----------
 // The repository URL is allowed (it is where the code lives); anything else is not.
 const BRANDS = [/frame\s*core/i];
+// Common key shapes (OpenAI/Anthropic sk-, ElevenLabs sk_, Replicate r8_, Google AIza, GitHub, fal key:secret).
+const SECRETS = [
+  /\bsk-(?:ant-|proj-)?[A-Za-z0-9_-]{24,}/,
+  /\bsk_[a-f0-9]{32,}/,
+  /\br8_[A-Za-z0-9]{30,}/,
+  /\bAIza[0-9A-Za-z_-]{35}\b/,
+  /\bgh[pousr]_[A-Za-z0-9]{36,}/,
+  /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{32}\b/,
+];
 const ALLOWED_URL = /(github\.com\/)?FrameCoreWorks\/FCWM/gi;
 const SKIP_DIRS = new Set([".git", "node_modules", ".venv", "out"]);
 const TEXT_EXT = /\.(md|mdx|json|js|mjs|cjs|ts|py|html|css|svg|txt|ya?ml|toml|sh)$/i;
@@ -145,12 +183,13 @@ function walk(dir) {
     if (!TEXT_EXT.test(name) && !["LICENSE", "NOTICE"].includes(name)) continue;
     const text = readFileSync(full, "utf8").replace(ALLOWED_URL, "");
     for (const re of BRANDS) if (re.test(text)) fail(rel, `brand name matched ${re}; FCWM ships without a brand`);
+    for (const re of SECRETS) if (re.test(text)) fail(rel, `looks like an API key (${re}); use a placeholder such as <your-api-key>`);
   }
 }
 walk(root);
 
 // ---------- report ----------
-// ---------- 5. skill reference copies ----------
+// ---------- 6. skill reference copies ----------
 const { drift } = await import("./sync-skill-refs.mjs");
 for (const rel of drift()) fail(rel, "out of date with its source: run node scripts/sync-skill-refs.mjs");
 
@@ -158,4 +197,4 @@ if (errors.length) {
   console.error(`validate: ${errors.length} problem(s)\n` + errors.map((e) => `  - ${e}`).join("\n"));
   process.exit(1);
 }
-console.log(`validate: ok (${skillDirs.length} skill(s), ${Object.keys(manifests).length + 1} manifests, ${catalog?.engines?.length ?? 0} engines)`);
+console.log(`validate: ok (${skillDirs.length} skill(s), ${Object.keys(manifests).length + 1} manifests, ${catalog?.engines?.length ?? 0} engines, ${services?.services?.length ?? 0} optional services)`);

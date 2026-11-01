@@ -11,8 +11,9 @@
   },
   "scripts": {
     "validate": "node scripts/validate.mjs",
-    "test": "node --test lib/test/lib.test.mjs qa/test/checks.test.mjs scripts/test/cli.test.mjs",
-    "fcwm": "node scripts/fcwm.mjs"
+    "test": "node --test lib/test/lib.test.mjs qa/test/checks.test.mjs scripts/test/cli.test.mjs scripts/test/services.test.mjs",
+    "fcwm": "node scripts/fcwm.mjs",
+    "services": "node scripts/services.mjs"
   },
   "bin": {
     "fcwm": "scripts/fcwm.mjs"

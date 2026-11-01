@@ -1,5 +1,5 @@
 {
-  "$comment": "Source of truth for engine routing. tier: free | restricted | paid. status: planned | experimental | ready | user-configured. Only experimental or ready engines may be used by skills (experimental: tell the user it is new). user-configured: a paid API or MCP server the user connects themselves; never built in. checked: the date licence, stars and activity were last verified.",
+  "$comment": "Source of truth for engine routing. tier: free | restricted | paid. status: planned | experimental | ready. Only experimental or ready engines may be used by skills (experimental: tell the user it is new). Optional paid services (APIs, MCP servers) are not engines: see integrations/catalog.json. checked: the date licence, stars and activity were last verified.",
   "version": 1,
   "engines": [
     {
