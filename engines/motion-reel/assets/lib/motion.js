@@ -237,6 +237,10 @@ export const TS = (u) => GRID.offset + u * GRID.period;   // beats -> seconds
 // anything else that must not be averaged away by the sub-frame samples.
 // samples may be a number or a function of t (fewer sub-frames where nothing moves fast or a shot
 // is expensive, e.g. a raymarched 3-D scene).
+// The motion-blur sub-frame being drawn: k of n (n = 1 without blur). Expensive layers (a path-traced
+// set) read it to split their budget across the shutter instead of paying for every sub-frame.
+export const SUB = { k: 0, n: 1 };
+
 export async function film({ draw, init, post, fonts = [], images = {}, hits = [], samples = 16, shutter = 0.5 }) {
   const canvas = document.getElementById('film');
   canvas.width = W; canvas.height = H;
@@ -283,13 +287,15 @@ export async function film({ draw, init, post, fonts = [], images = {}, hits = [
   window.seek = (t) => {
     const t0 = t + 0.5 / fps;
     const n = typeof samples === 'function' ? samples(t0) : samples;
-    if (!blur || n <= 1) { frame(mctx, t0); runPost(t0); return; }
+    if (!blur || n <= 1) { SUB.k = 0; SUB.n = 1; frame(mctx, t0); runPost(t0); return; }
     for (let k = 0; k < n; k++) {
+      SUB.k = k; SUB.n = n;
       frame(bctx, t0 + (k / n) * (shutter / fps));
       mctx.globalAlpha = 1 / (k + 1);
       mctx.drawImage(buf, 0, 0);
     }
     mctx.globalAlpha = 1;
+    SUB.k = 0; SUB.n = 1;
     runPost(t0);
   };
   window.HITS = hits;

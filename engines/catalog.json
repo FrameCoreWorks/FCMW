@@ -12,7 +12,24 @@
       "requirements": "Node 22+, FFmpeg, Chromium via Playwright, uv for audio scripts. GPU strongly recommended for 3D (software WebGL is far slower).",
       "status": "experimental",
       "checked": "2026-11-01",
-      "version": "1.3.0"
+      "version": "1.3.0",
+      "modes": [
+        {
+          "id": "pathtrace",
+          "name": "Path-traced 3D (quality mode)",
+          "purpose": "Physically based light for three.js sets: real reflections and refractions, glass and caustics, soft shadows from area lights, depth of field. The same set and animation as the rasterised mode, still a pure function of time.",
+          "library": "three-gpu-pathtracer",
+          "tier": "free",
+          "license": "MIT",
+          "upstream": "https://github.com/gkjohnson/three-gpu-pathtracer",
+          "version": "0.0.27 (with three-mesh-bvh 0.9.17, three >= 0.185)",
+          "requirements": "A GPU. In the film folder: npm i three-gpu-pathtracer@0.0.27 three-mesh-bvh@0.9.17.",
+          "cost": "Seconds per frame on a GPU at 1080p and 256 samples (estimate, not yet measured on Apple silicon); a 30 s 60 fps film is hours, not minutes. GitHub Actions has no GPU: there it is for low-sample test frames only. Check with few samples first.",
+          "notes": "Uses the library's WebGL tracer, which runs in headless Chromium on every GPU. Upstream now leads with a WebGPU tracer and marks the WebGL one deprecated, hence the exact pin; the WebGPU tracer crashed on software WebGPU (SwiftShader) when tested on 2026-11-01.",
+          "status": "experimental",
+          "checked": "2026-11-01"
+        }
+      ]
     },
     {
       "id": "hyperframes",

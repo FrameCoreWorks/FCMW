@@ -56,11 +56,17 @@ tell the user the engine and its tier; for anything other than `free`, add the l
 | 3-D scenes, point clouds, voxel characters, generative motion, synthesized score, music and lyric videos | motion-reel | free |
 | Equations and technical diagrams, physical simulation, Lottie or animated SVG | Manim, Blender, Lottie (planned) | say they are not available yet; offer the closest engine above |
 
+**3-D quality mode.** For a 3-D shot about materials and light (glass, metal, liquid, a product on a
+table, soft shadows, depth of field), offer path tracing on motion-reel next to the default rasteriser,
+with one line each: rasterised is fast; path traced looks physically real but takes seconds per frame
+on a GPU (hours for a long film) and is experimental. Let the user choose; never switch it on silently.
+Details: `catalog.json` motion-reel `modes`, and `references/pathtrace.md` in the motion-reel skill.
+
 When a job fits both (for example 2-D kinetic type with a synthesized score), offer both with one line
 each and recommend one. Then load the engine skill and follow it:
 
 - HyperFrames: `fcwm new <film>` and `skills/fcwm-hyperframes/SKILL.md`
-- motion-reel: `fcwm new <film> --engine motion-reel` (`--3d` for three.js) and `skills/fcwm-motion-reel/SKILL.md`
+- motion-reel: `fcwm new <film> --engine motion-reel` (`--3d` for three.js, `--pathtrace` for the path-traced mode) and `skills/fcwm-motion-reel/SKILL.md`
 
 ## Paid APIs and MCP servers
 

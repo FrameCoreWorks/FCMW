@@ -171,3 +171,32 @@ test('fcwm.mjs runs when started through a symlink (npm bin)', async () => {
   assert.equal(r.status, 0);
   assert.match(r.stdout, /hyperframes/);
 });
+
+test('fcwm new --pathtrace: path tracer lib, sample set, import map and quality block', async () => {
+  const root = tmp();
+  assert.equal(await main(['new', 'pt', '--pathtrace', '--format', '16x9'], { cwd: root, ...quiet }), 0);
+  const dir = path.join(root, 'pt');
+  for (const f of ['lib/gl.js', 'lib/pathtrace.js', 'sets/studio.js', 'film.js']) assert.ok(fs.existsSync(path.join(dir, f)), f);
+  const html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
+  assert.match(html, /"three-gpu-pathtracer": "\/node_modules\/three-gpu-pathtracer\/src\/index.js"/);
+  assert.match(html, /"three-mesh-bvh": /);
+  assert.match(fs.readFileSync(path.join(dir, 'film.js'), 'utf8'), /PT\.renderSet\(/);
+  const cfg = JSON.parse(fs.readFileSync(path.join(dir, 'film.json'), 'utf8'));
+  assert.equal(cfg.engine, 'motion-reel');
+  assert.deepEqual(cfg.pathtrace, { spp: 256, scale: 1, checkSpp: 32, checkScale: 0.5 });
+});
+
+test('motion-reel plan: a path-traced film is checked with few samples at reduced size', async () => {
+  const root = tmp();
+  makeFilm(root, 'p', { engine: 'motion-reel', formats: ['16x9'], pathtrace: { spp: 512, checkSpp: 8, checkScale: 0.25 } });
+  const steps = (await loadAdapter('motion-reel')).plan(loadFilm('p', root), 'check');
+  const sheet = steps.find((s) => s.label === 'contact sheet 16x9');
+  assert.deepEqual(sheet.args.slice(-4), ['--spp', '8', '--pt-scale', '0.25']);
+});
+
+test('pathtrace.js never calls Math.random or the clock to paint', () => {
+  const src = fs.readFileSync(new URL('../../engines/motion-reel/assets/lib/pathtrace.js', import.meta.url), 'utf8')
+    .replace(/\/\/.*$/gm, '');
+  assert.doesNotMatch(src, /Date\.now|performance\.now|requestAnimationFrame|setTimeout/);
+  assert.doesNotMatch(src, /Math\.random\(\)/);
+});

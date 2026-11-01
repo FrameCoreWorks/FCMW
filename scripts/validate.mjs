@@ -126,6 +126,12 @@ if (catalog) {
     if (e.id && ids.has(e.id)) fail(where, "duplicate id");
     ids.add(e.id);
     if ((e.status === "ready" || e.status === "experimental") && !existsSync(join(root, "engines", e.id))) fail(where, `status is ${e.status} but engines/${e.id}/ does not exist`);
+    for (const [j, m] of (e.modes || []).entries()) {
+      const at = `${where} modes[${j}]${m.id ? ` (${m.id})` : ""}`;
+      for (const k of ["id", "name", "purpose", "library", "tier", "license", "upstream", "cost", "status", "checked"]) if (m[k] === undefined || m[k] === "") fail(at, `missing "${k}"`);
+      if (m.tier && !TIERS.has(m.tier)) fail(at, `tier "${m.tier}" must be one of ${[...TIERS].join(", ")}`);
+      if (m.status && !STATUSES.has(m.status)) fail(at, `status "${m.status}" must be one of ${[...STATUSES].join(", ")}`);
+    }
   }
 }
 

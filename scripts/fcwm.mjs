@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // FCWM command line: new film, render, quality checks. Works on macOS, Windows and Linux.
 //
-//   node scripts/fcwm.mjs new <name> [--engine hyperframes|motion-reel] [--3d] [--format 9x16,16x9]
+//   node scripts/fcwm.mjs new <name> [--engine hyperframes|motion-reel] [--3d] [--pathtrace] [--format 9x16,16x9]
 //                                    [--duration 15] [--bpm 120] [--title "..."]
 //   node scripts/fcwm.mjs render <film> [--check | --at 3.2,7.5] [--format 9x16] [--no-qa]
 //   node scripts/fcwm.mjs qa <film | video.mp4> [--determinism]
@@ -37,7 +37,7 @@ class UserError extends Error { constructor(msg, code = 1) { super(msg); this.co
 const USAGE = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 14).map((l) => l.replace(/^\/\/ ?/, '')).join('\n');
 
 export async function main(argv, { cwd = process.cwd(), log = console.log } = {}) {
-  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'no-qa', 'determinism', 'help', 'cloud', 'next'] });
+  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'pathtrace', 'no-qa', 'determinism', 'help', 'cloud', 'next'] });
   const [cmd, target] = a._;
   if (!cmd || a.help || cmd === 'help') { log(USAGE); return 0; }
   if (cmd === 'engines') return engines(log);
@@ -81,12 +81,12 @@ async function newFilm(slug, a, cwd, log) {
   if (!slug || !/^[a-z0-9][a-z0-9-]*$/.test(slug)) throw new UserError('usage: fcwm new <name>  (lowercase letters, digits and dashes)');
   const dest = path.join(cwd, slug);
   if (fs.existsSync(dest)) throw new UserError(`${dest} already exists; pick another name (nothing was changed)`);
-  const engine = a['3d'] ? 'motion-reel' : (a.engine || 'hyperframes');
+  const engine = (a['3d'] || a.pathtrace) ? 'motion-reel' : (a.engine || 'hyperframes');
   if (!ENGINES.includes(engine)) throw new UserError(`--engine must be one of ${ENGINES.join(', ')}`);
   const formats = String(a.format || '9x16').split(',');
   for (const f of formats) if (!FORMATS[f]) throw new UserError(`--format ${f} is not one of ${Object.keys(FORMATS).join(', ')}`);
   const adapter = await loadAdapter(engine);
-  const steps = adapter.scaffoldSteps(cwd, slug, { duration: Number(a.duration) || 15, formats, bpm: Number(a.bpm) || 120, threeD: !!a['3d'], title: a.title });
+  const steps = adapter.scaffoldSteps(cwd, slug, { duration: Number(a.duration) || 15, formats, bpm: Number(a.bpm) || 120, threeD: !!(a['3d'] || a.pathtrace), pathtrace: !!a.pathtrace, title: a.title });
   if (a['dry-run']) { log(describe(steps)); return 0; }
   await runSteps(steps, { log });
   const cfgPath = path.join(dest, 'film.json');
@@ -104,6 +104,8 @@ async function prepare(target, a, cwd, log) {
   const html = path.join(film.dir, 'index.html');
   if (fs.existsSync(html) && LOADS_GSAP.test(fs.readFileSync(html, 'utf8')))
     log('note: this film loads GSAP, which is "restricted" (GSAP Standard licence: free, custom terms with a no-compete clause, not open source).');
+  const pt = film.config.pathtrace && engineEntry(film.engine).modes?.find((m) => m.id === 'pathtrace');
+  if (pt) log(`note: path-traced film (${pt.library}, ${pt.license}, "${pt.tier}", ${pt.status}). ${pt.cost}`);
   const adapter = await loadAdapter(film.engine);
   return { film, adapter };
 }
@@ -144,7 +146,11 @@ async function qaFilm(film, formats, a, log) {
   let ok = true;
   for (const f of formats) {
     const file = path.join(film.renderDir, `${film.slug}-${f}.mp4`);
-    if (!fs.existsSync(file)) throw new UserError(`${file} not rendered yet: fcwm render ${film.slug}`);
+    if (!fs.existsSync(file)) {
+      // --determinism needs only stills: a slow (path-traced) film can be checked before a full render
+      if (a.determinism) { log(`SKIP  video checks for ${f}: not rendered yet`); continue; }
+      throw new UserError(`${file} not rendered yet: fcwm render ${film.slug}`);
+    }
     const r = checkVideo(file, { fps: film.fps, allowBlank: film.config.allowBlank || [] });
     const [W, H] = FORMATS[f];
     r.size = { pass: r.info.width === W && r.info.height === H, got: `${r.info.width}x${r.info.height}`, want: `${W}x${H}` };

@@ -2,6 +2,15 @@
 
 ## 0.3.0 (unreleased)
 
+- Path-traced 3-D quality mode on motion-reel (experimental): `fcwm new <film> --pathtrace` traces the
+  same three.js sets with three-gpu-pathtracer 0.0.27 (MIT) for real reflections, glass, soft area
+  light shadows and depth of field. Fixed samples per frame, seeded sequences, motion-blur sub-frames
+  share the budget; `--spp`, `--pt-scale`, `--draft` on the renderer, low-sample contact sheets,
+  one worker. Listed as a `modes` entry on motion-reel in `engines/catalog.json` (validated). A
+  determinism and non-black test frame runs in the smoke workflow. Guide: `references/pathtrace.md`.
+- The motion-reel renderer serves `/node_modules/` from the FCWM install when the films folder has
+  none, so 3-D films need no npm step of their own (three, opentype.js and the path tracer are pinned in
+  FCWM's `package.json`).
 - Render hand-off for any agent: one self-contained film folder, its path, one command.
   `scripts/install.sh` (macOS, Linux) and `scripts/install.ps1` (Windows) install Node.js and FCWM only
   when missing, then `fcwm run <folder>` installs only the tools the film lacks and renders into

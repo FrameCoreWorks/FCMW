@@ -30,10 +30,11 @@ export default {
   },
 
   // Scaffold through the engine's own script, then give the film a default grid.
-  scaffoldSteps(root, slug, { duration = 15, formats = ['9x16'], bpm = 120, threeD = false, title } = {}) {
+  scaffoldSteps(root, slug, { duration = 15, formats = ['9x16'], bpm = 120, threeD = false, pathtrace = false, title } = {}) {
     const args = [script('scaffold.mjs'), slug, '--duration', String(duration), '--formats', formats.join(',')];
     if (title) args.push('--title', title);
     if (threeD) args.push('--3d');
+    if (pathtrace) args.push('--pathtrace');
     return [
       { label: 'scaffold (motion-reel template)', cmd: process.execPath, args, cwd: root },
       { label: 'beat grid', fn: () => {
@@ -61,7 +62,10 @@ export default {
     }
     if (mode === 'check') {
       steps.push({ label: 'clear old contact sheets', fn: () => clearSheets(film.renderDir) });
-      for (const f of fmts) steps.push({ label: `contact sheet ${f}`, ...render('--contact', '--format', f) });
+      // a path-traced film is checked with few samples at reduced size: layout and light, not grain
+      const pt = film.config.pathtrace;
+      const ptCheck = pt ? ['--spp', String(pt.checkSpp ?? 32), '--pt-scale', String(pt.checkScale ?? 0.5)] : [];
+      for (const f of fmts) steps.push({ label: `contact sheet ${f}`, ...render('--contact', '--format', f, ...ptCheck) });
       steps.push({ label: 'collect', fn: () => copyMatching(out, film.renderDir, /^(contact|phone).*\.png$/) });
       return steps;
     }
