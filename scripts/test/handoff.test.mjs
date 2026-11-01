@@ -58,6 +58,8 @@ test('installPlan: the package manager of each OS, or a manual step', () => {
   assert.match(installPlan('gh', { platform: 'linux', hasBin: (b) => b === 'apt-get' }).args[1], /apt-get install -y --no-install-recommends gh$/);
   assert.deepEqual(installPlan('chromium', { platform: 'linux', repo: '/r' }).args, ['playwright', 'install', '--with-deps', 'chromium']);
   assert.deepEqual(installPlan('chromium', { platform: 'darwin', repo: '/r' }).args, ['playwright', 'install', 'chromium']);
+  assert.deepEqual(installPlan('ffmpeg', { platform: 'win32', hasBin: (b) => b === 'choco' }).args, ['install', 'ffmpeg', '-y', '--no-progress']);
+  assert.deepEqual(installPlan('ffmpeg', { platform: 'win32', hasBin: (b) => b === 'scoop' }).args, ['install', 'ffmpeg']);
   assert.ok(installPlan('hyperframes').note);
 });
 

@@ -59,7 +59,7 @@ export function installPlan(name, { platform = process.platform, repo, hasBin = 
   const pkgs = {
     ffmpeg: { brew: 'ffmpeg', winget: 'Gyan.FFmpeg', apt: 'ffmpeg', dnf: 'ffmpeg', pacman: 'ffmpeg' },
     uv: { brew: 'uv', winget: 'astral-sh.uv' },
-    gh: { brew: 'gh', winget: 'GitHub.cli', apt: 'gh', dnf: 'gh', pacman: 'github-cli' },
+    gh: { brew: 'gh', winget: 'GitHub.cli', choco: 'gh', apt: 'gh', dnf: 'gh', pacman: 'github-cli' },
     git: { brew: 'git', winget: 'Git.Git', apt: 'git', dnf: 'git', pacman: 'git' },
   }[name];
   if (!pkgs) return { manual: `install ${name} and make sure it is on PATH` };
@@ -69,6 +69,9 @@ export function installPlan(name, { platform = process.platform, repo, hasBin = 
   }
   if (platform === 'win32') {
     if (hasBin('winget')) return { cmd: 'winget', args: ['install', '--id', pkgs.winget, '-e', '--accept-source-agreements', '--accept-package-agreements'], label: name, newPath: true };
+    // Windows without winget (Server, LTSC): Scoop (per user) or Chocolatey (needs an admin window)
+    if (hasBin('scoop') && pkgs.scoop !== false) return { cmd: 'scoop', args: ['install', pkgs.scoop || name], label: name };
+    if (hasBin('choco') && pkgs.choco !== false) return { cmd: 'choco', args: ['install', pkgs.choco || name, '-y', '--no-progress'], label: name };
     return { manual: `winget is missing (App Installer from the Microsoft Store). Install ${name} by hand and run the same command again.` };
   }
   if (name === 'uv') return { cmd: 'sh', args: ['-c', 'curl -LsSf https://astral.sh/uv/install.sh | sh'], label: 'uv', addPath: path.join(os.homedir(), '.local', 'bin') };

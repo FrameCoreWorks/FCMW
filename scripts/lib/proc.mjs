@@ -2,7 +2,7 @@
 import { spawn } from 'node:child_process';
 
 // Windows runs npm/npx through .cmd shims, which need a shell; every argument is then quoted.
-const WIN_SHIMS = new Set(['npm', 'npx', 'uv', 'uvx']);
+const WIN_SHIMS = new Set(['npm', 'npx', 'uv', 'uvx', 'scoop']);
 const WIN_SPECIAL = /[\s&()^|<>"%!]/;
 
 export function quoteWin(arg) {
