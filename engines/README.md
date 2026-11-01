@@ -14,5 +14,6 @@ An adapter directory holds:
   root `NOTICE`.
 - An example film and a test that renders it.
 
-Paid APIs (video, image, music, voice generators) are listed with `tier: "paid"` and always use the
-user's own key from an environment variable. They are never required.
+Paid generators (video, image, music, voice) are not engines: they are optional services listed in
+[`../integrations/catalog.json`](../integrations/catalog.json) with `tier: "paid"`, connected by the
+user in their own agent (see `skills/connecting-services`). They are never required.

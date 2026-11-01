@@ -6,9 +6,12 @@
   "license": "Apache-2.0",
   "repository": "https://github.com/FrameCoreWorks/FCWM",
   "type": "module",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "validate": "node scripts/validate.mjs",
-    "test": "node --test lib/test/lib.test.mjs"
+    "test": "node --test lib/test/lib.test.mjs scripts/test/services.test.mjs",
+    "services": "node scripts/services.mjs"
   }
 }
