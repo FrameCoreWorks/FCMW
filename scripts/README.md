@@ -12,5 +12,7 @@ arguments as arrays, so paths with spaces or `&` work.
 | `lib/` | `args`, `proc` (cross-platform spawn), `tools` (find ffmpeg/uv and install hints), `film` (read `film.json`), `pipeline` (run adapter steps), `contact` (contact sheets). |
 | `test/` | `node:test` suites, run with `npm test`. |
 
+On Windows, cmd.exe expands `%NAME%` even inside quotes, so avoid `%` in film folder names.
+
 Render from a normal terminal: sandboxed agent sessions on macOS can block Chromium.
 `TMPDIR` and `PLAYWRIGHT_BROWSERS_PATH` can point to another disk when the system disk is full.

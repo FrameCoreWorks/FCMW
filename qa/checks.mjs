@@ -79,6 +79,7 @@ export function safeZone(boxes, format, [W, H]) {
 export async function determinism(renderStills) {
   const a = await renderStills('a');
   const b = await renderStills('b');
+  if (a.length === 0 || a.length !== b.length) return { pass: false, checked: a.map((x) => x.t), diffs: [], error: `the two passes wrote ${a.length} and ${b.length} stills` };
   const diffs = a.filter((x, i) => !fs.readFileSync(x.file).equals(fs.readFileSync(b[i].file))).map((x) => x.t);
   return { pass: diffs.length === 0, checked: a.map((x) => x.t), diffs };
 }

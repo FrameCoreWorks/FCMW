@@ -58,7 +58,7 @@ test('motion-reel plan: check renders a contact sheet per format', async () => {
   const mr = await loadAdapter('motion-reel');
   const steps = mr.plan(loadFilm('m', root), 'check');
   assert.deepEqual(steps.filter((s) => s.cmd).map((s) => s.args.slice(1)), [
-    ['--film', 'm', '--contact', '--format', '9x16'], ['--film', 'm', '--contact', '--format', '1x1']]);
+    ['--film', 'm', '--fps', '60', '--contact', '--format', '9x16'], ['--film', 'm', '--fps', '60', '--contact', '--format', '1x1']]);
   assert.ok(steps.every((s) => !s.cmd || s.cwd === root));
 });
 
@@ -69,11 +69,12 @@ test('motion-reel plan: full keeps the render.sh order and scores first when sco
   const mr = await loadAdapter('motion-reel');
   const film = loadFilm('m', root);
   const steps = mr.plan(film, 'full');
-  assert.deepEqual(steps.map((s) => s.label.split(/[ :]/)[0]), ['score', 'picture', 'sound', 'mix', 'deliver']);
+  assert.deepEqual(steps.map((s) => s.label.split(/[ :]/)[0]), ['score', 'clear', 'picture', 'sound', 'mix', 'deliver']);
   assert.equal(steps[0].cmd, 'uv');
   assert.ok(steps[0].env.MOTION_REEL_SKILL.endsWith(path.join('engines', 'motion-reel')));
-  assert.equal(steps[2].when(), true);
-  assert.equal(steps[3].when(), false);
+  assert.equal(steps[3].when(), true);
+  assert.equal(steps[4].when(), false);
+  assert.deepEqual(steps[2].args.slice(3, 5), ['--fps', '60']);
   assert.deepEqual(mr.requires(film), ['ffmpeg', 'ffprobe', 'uv']);
 });
 
@@ -140,4 +141,33 @@ test('stillTime reads both engines\' still names', async () => {
   assert.equal(stillTime('frame-02-at-3.75s.png'), 3.75);
   assert.equal(stillTime('t0.250_9x16.png'), 0.25);
   assert.ok(Number.isNaN(stillTime('contact.png')));
+});
+
+test('hyperframes films have one format: film.json and --format are both checked', async () => {
+  const root = tmp();
+  makeFilm(root, 'two', { engine: 'hyperframes', formats: ['9x16', '1x1'] });
+  assert.throws(() => loadFilm('two', root), /one format/);
+  makeFilm(root, 'one', { engine: 'hyperframes', formats: ['9x16'] });
+  await assert.rejects(main(['render', 'one', '--format', '16x9', '--dry-run'], { cwd: root, ...quiet }), /only in its own format/);
+  await assert.rejects(main(['render', 'one', '--at'], { cwd: root, ...quiet }), /needs times/);
+});
+
+test('determinism: a pass that wrote fewer stills fails instead of throwing', async () => {
+  const { determinism } = await import('../../qa/checks.mjs');
+  const dir = tmp();
+  const p = path.join(dir, 'x.png');
+  fs.writeFileSync(p, 'x');
+  const r = await determinism(async (tag) => (tag === 'a' ? [{ t: 0, file: p }, { t: 1, file: p }] : [{ t: 0, file: p }]));
+  assert.equal(r.pass, false);
+  assert.match(r.error, /2 and 1/);
+});
+
+test('fcwm.mjs runs when started through a symlink (npm bin)', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const dir = tmp();
+  const link = path.join(dir, 'fcwm');
+  try { fs.symlinkSync(path.resolve('scripts/fcwm.mjs'), link); } catch { return; } // Windows without symlink rights
+  const r = spawnSync(process.execPath, [link, 'engines'], { encoding: 'utf8' });
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /hyperframes/);
 });

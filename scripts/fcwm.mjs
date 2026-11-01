@@ -98,18 +98,25 @@ async function prepare(target, a, cwd, log) {
 
 async function render(target, a, cwd, log) {
   const { film, adapter } = await prepare(target, a, cwd, log);
+  if (a.at === true) throw new UserError('--at needs times in seconds, for example --at 3.2,7.5');
   const mode = a.check ? 'check' : a.at ? 'at' : 'full';
   const formats = a.format ? String(a.format).split(',') : film.formats;
+  if (film.engine === 'hyperframes' && formats.join() !== film.formats[0])
+    throw new UserError(`a HyperFrames film renders only in its own format (${film.formats[0]}); make another film for ${formats.join(', ')}`);
   const steps = adapter.plan(film, mode, { at: String(a.at || ''), formats });
   if (mode === 'full') steps.push(previewStep(film, formats[0]));
   if (a['dry-run']) { log(describe(steps)); return 0; }
-  await requireTools(adapter.requires(film), log);
-  if (film.engine === 'motion-reel' && !(await hasPlaywright([film.root, REPO])))
-    throw new UserError('missing: playwright. In the FCWM folder run  npm install && npx playwright install chromium', 2);
+  await requireRenderTools(film, adapter);
   await runSteps(steps, { log });
   log(`done: ${film.renderDir}`);
   if (mode !== 'full' || a['no-qa']) return 0;
   return qaFilm(film, formats, a, log);
+}
+
+async function requireRenderTools(film, adapter) {
+  await requireTools(adapter.requires(film));
+  if (film.engine === 'motion-reel' && !(await hasPlaywright([film.root, REPO])))
+    throw new UserError('missing: playwright. In the FCWM folder run  npm install && npx playwright install chromium', 2);
 }
 
 function previewStep(film, format) {
@@ -134,7 +141,8 @@ async function qaFilm(film, formats, a, log) {
     ok &&= [r.loudness, r.frameRate, r.blankFrames, r.size].every((c) => c.pass);
   }
   if (a.determinism) {
-    const at = film.config.qaTimes || [0.25, film.duration / 2, Math.max(0, film.duration - 0.25)].map((t) => +t.toFixed(2));
+    const at = [...(film.config.qaTimes || [0.25, film.duration / 2, Math.max(0, film.duration - 0.25)])].map((t) => +Number(t).toFixed(2)).sort((x, y) => x - y);
+    await requireRenderTools(film, await loadAdapter(film.engine));
     const stillsDir = path.join(film.renderDir, 'stills');
     report.determinism = await determinism(async (tag) => {
       await runSteps((await loadAdapter(film.engine)).plan(film, 'at', { at: at.join(','), formats: [formats[0]] }), { log: () => {} });
@@ -165,9 +173,10 @@ async function qa(target, a, cwd, log) {
   return qaFilm(film, a.format ? String(a.format).split(',') : film.formats, a, log);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+const isMain = () => { try { return fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url)); } catch { return false; } };
+if (process.argv[1] && isMain()) {
   main(process.argv.slice(2)).then((code) => process.exit(code), (err) => {
-    console.error(err instanceof UserError ? err.message : err.stack);
+    console.error(err instanceof UserError || !process.env.FCWM_DEBUG ? `fcwm: ${err.message}` : err.stack);
     process.exit(err.code && Number.isInteger(err.code) ? err.code : 1);
   });
 }

@@ -41,3 +41,8 @@ export function stillTime(name) {
   return m ? Number(m[1]) : NaN;
 }
 export const byStillTime = (a, b) => stillTime(a) - stillTime(b);
+
+export function clearSheets(dir) {
+  if (!fs.existsSync(dir)) return;
+  for (const n of fs.readdirSync(dir)) if (/^(contact|phone).*\.png$/.test(n)) fs.rmSync(path.join(dir, n));
+}

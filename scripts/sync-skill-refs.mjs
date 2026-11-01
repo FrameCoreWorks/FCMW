@@ -48,7 +48,8 @@ export function drift() {
   }).map(([rel]) => rel);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+const isMain = () => { try { return fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url)); } catch { return false; } };
+if (process.argv[1] && isMain()) {
   if (process.argv.includes('--check')) {
     const d = drift();
     if (d.length) { console.error(`out of date (run node scripts/sync-skill-refs.mjs):\n  ${d.join('\n  ')}`); process.exit(1); }

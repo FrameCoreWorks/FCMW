@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { sheetTimes, tileSheets, byStillTime } from '../../scripts/lib/contact.mjs';
+import { sheetTimes, tileSheets, byStillTime, clearSheets } from '../../scripts/lib/contact.mjs';
 
 export const HYPERFRAMES_VERSION = '0.8.226';
 export const ENV = { HYPERFRAMES_NO_TELEMETRY: '1', DO_NOT_TRACK: '1', HYPERFRAMES_SKIP_SKILLS: '1' };
@@ -47,7 +47,7 @@ export default {
       const times = sheetTimes(film);
       const snaps = path.join(renderDir, 'snaps');
       return [
-        { label: 'clear old snapshots', fn: () => fs.rmSync(snaps, { recursive: true, force: true }) },
+        { label: 'clear old snapshots and sheets', fn: () => { fs.rmSync(snaps, { recursive: true, force: true }); clearSheets(renderDir); } },
         { label: 'lint, runtime and layout check', ...hf(['check', dir], root) },
         { label: `snapshots on ${times.length} beats`, ...hf(['snapshot', dir, '--at', times.join(','), '--no-end', '-o', snaps], root) },
         { label: 'contact sheets', fn: () => tileSheets(

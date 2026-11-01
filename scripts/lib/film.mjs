@@ -13,6 +13,7 @@ export function loadFilm(filmPath, cwd = process.cwd()) {
   const engine = config.engine || 'hyperframes';
   if (!ENGINES.includes(engine)) throw new Error(`film.json engine "${engine}" is not one of ${ENGINES.join(', ')}`);
   const formats = config.formats?.length ? config.formats : ['9x16'];
+  if (engine === 'hyperframes' && formats.length > 1) throw new Error(`a HyperFrames film is composed for one format, but film.json lists ${formats.join(', ')}: make one film per format`);
   for (const f of formats) if (!FORMATS[f]) throw new Error(`film.json format "${f}" is not one of ${Object.keys(FORMATS).join(', ')}`);
   return {
     dir, root: path.dirname(dir), slug: path.basename(dir), config, engine, formats,
