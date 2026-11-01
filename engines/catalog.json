@@ -1,0 +1,75 @@
+{
+  "$comment": "Source of truth for engine routing. tier: free | restricted | paid. status: planned | experimental | ready. Only 'ready' engines may be used by skills. 'checked' is the date licence, stars and activity were last verified on GitHub.",
+  "version": 1,
+  "engines": [
+    {
+      "id": "motion-reel",
+      "name": "motion-reel",
+      "purpose": "Canvas films as a pure function of time: kinetic type, UI and product motion, 2D and three.js 3D, synthesized score and sound effects, frame-exact render.",
+      "tier": "free",
+      "license": "MIT",
+      "upstream": "https://github.com/Aries-Spring/motion-reel",
+      "requirements": "Node 18+, FFmpeg, Chromium via Playwright, uv for audio scripts. GPU strongly recommended for 3D (software WebGL is far slower).",
+      "status": "planned",
+      "checked": "2026-11-01"
+    },
+    {
+      "id": "hyperframes",
+      "name": "HyperFrames",
+      "purpose": "HTML and CSS compositions rendered to video: layouts, web-style motion, captions.",
+      "tier": "free",
+      "license": "Apache-2.0",
+      "upstream": "https://github.com/heygen-com/hyperframes",
+      "requirements": "Node, Chromium, FFmpeg.",
+      "notes": "Optional GSAP animations use the GSAP licence (free, custom terms, not OSI): mark as restricted when used.",
+      "status": "planned",
+      "checked": "2026-11-01"
+    },
+    {
+      "id": "manim",
+      "name": "Manim Community",
+      "purpose": "Equations, graphs, mathematical and technical diagrams.",
+      "tier": "free",
+      "license": "MIT",
+      "upstream": "https://github.com/ManimCommunity/manim",
+      "requirements": "Python 3.10+, cairo, pango, FFmpeg; LaTeX for typeset maths.",
+      "status": "planned",
+      "checked": "2026-11-01"
+    },
+    {
+      "id": "blender",
+      "name": "Blender (Python scripts)",
+      "purpose": "Physical simulation, photoreal 3D, complex scenes.",
+      "tier": "restricted",
+      "license": "GPL-3.0-or-later",
+      "license_note": "GPL covers Blender itself; films and scenes the user renders are theirs. Scripts that import bpy are GPL-bound.",
+      "upstream": "https://github.com/blender/blender",
+      "requirements": "Blender 4.x. Without a GPU only Cycles on CPU is practical, which is slow.",
+      "status": "planned",
+      "checked": "2026-11-01"
+    },
+    {
+      "id": "lottie",
+      "name": "Lottie / animated SVG",
+      "purpose": "Lightweight vector animation for web and apps, exported as Lottie JSON or animated SVG.",
+      "tier": "free",
+      "license": "MIT",
+      "upstream": "https://github.com/airbnb/lottie-web",
+      "notes": "lottie-web last pushed 2025-09; re-check maintained alternatives before building.",
+      "status": "planned",
+      "checked": "2026-11-01"
+    },
+    {
+      "id": "remotion",
+      "name": "Remotion",
+      "purpose": "React-based video compositions.",
+      "tier": "restricted",
+      "license": "Remotion License (custom)",
+      "license_note": "Free for individuals and companies up to 3 people; larger companies need a paid company licence.",
+      "upstream": "https://github.com/remotion-dev/remotion",
+      "requirements": "Node, Chromium, FFmpeg.",
+      "status": "planned",
+      "checked": "2026-11-01"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "fcwm",
+  "description": "Motion graphics as code for any AI agent. 2D, 3D and audio films written as deterministic code and rendered on your own machine or in GitHub Actions. Picks the engine for the job, runs a quick or a full production process, checks quality and exports every format. Brand-neutral: you set the direction.",
+  "version": "0.1.0",
+  "author": { "name": "FCWM contributors" },
+  "homepage": "https://github.com/FrameCoreWorks/FCWM",
+  "repository": "https://github.com/FrameCoreWorks/FCWM",
+  "license": "Apache-2.0",
+  "keywords": ["motion-graphics", "video", "animation", "render", "three", "manim", "blender", "lottie", "audio"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "FCWM",
+    "shortDescription": "Motion graphics as code, rendered anywhere",
+    "longDescription": "Motion graphics as code for any AI agent. 2D, 3D and audio films written as deterministic code and rendered on your own machine or in GitHub Actions. Picks the engine for the job, runs a quick or a full production process, checks quality and exports every format. Brand-neutral: you set the direction.",
+    "developerName": "FCWM contributors",
+    "category": "Creativity",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/FrameCoreWorks/FCWM",
+    "defaultPrompt": [
+      "Make a 15-second 9:16 motion ad from this brief",
+      "Animate this logo with a sound sting, transparent background",
+      "Turn this data into an animated chart video"
+    ]
+  }
+}
