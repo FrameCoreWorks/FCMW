@@ -86,7 +86,7 @@ async function newFilm(slug, a, cwd, log) {
   if (!ENGINES.includes(engine)) throw new UserError(`--engine must be one of ${ENGINES.join(', ')}`);
   const formats = String(a.format || '9x16').split(',');
   for (const f of formats) if (!FORMATS[f]) throw new UserError(`--format ${f} is not one of ${Object.keys(FORMATS).join(', ')}`);
-  if (a.alpha && engine !== 'hyperframes') throw new UserError('--alpha (transparent background) is available for HyperFrames films; motion-reel renders opaque frames');
+  if (a.alpha && !['hyperframes', 'manim'].includes(engine)) throw new UserError('--alpha (transparent background) is available for HyperFrames and Manim films; motion-reel renders opaque frames');
   const adapter = await loadAdapter(engine);
   const steps = adapter.scaffoldSteps(cwd, slug, { duration: Number(a.duration) || 15, formats, bpm: Number(a.bpm) || 120, threeD: !!(a['3d'] || a.pathtrace), pathtrace: !!a.pathtrace, title: a.title, alpha: !!a.alpha });
   if (a['dry-run']) { log(describe(steps)); return 0; }

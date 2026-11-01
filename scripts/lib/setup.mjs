@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { spawnSync } from 'node:child_process';
 import { which } from './tools.mjs';
 import { run } from './proc.mjs';
 
@@ -19,6 +20,8 @@ export function requirementsFor(film) {
     if (fs.existsSync(path.join(film.dir, 'audio', 'score.py'))) need.push('uv');
   }
   if (film.engine === 'hyperframes') need.push('hyperframes');
+  // Manim runs through uv; on Linux its text renderer (ManimPango) builds against the system Pango
+  if (film.engine === 'manim') { need.push('uv'); if (process.platform === 'linux') need.push('pango'); }
   return need;
 }
 
@@ -41,6 +44,7 @@ export function detect(names, { repo, platform = process.platform, envPath } = {
       const a = which('ffmpeg', { path: envPath, platform }), b = which('ffprobe', { path: envPath, platform });
       found.ffmpeg = a && b ? a : null;
     } else if (n === 'chromium') found.chromium = chromiumPath([repo]);
+    else if (n === 'pango') found.pango = spawnSync('pkg-config', ['--exists', 'pangocairo']).status === 0 ? 'pkg-config pangocairo' : null;
     else if (n === 'hyperframes') found.hyperframes = which('npx', { path: envPath, platform }); // CLI and its Chrome arrive via npx on first render
     else found[n] = which(n, { path: envPath, platform });
   }
@@ -59,6 +63,7 @@ export function installPlan(name, { platform = process.platform, repo, hasBin = 
   const pkgs = {
     ffmpeg: { brew: 'ffmpeg', winget: 'Gyan.FFmpeg', apt: 'ffmpeg', dnf: 'ffmpeg', pacman: 'ffmpeg' },
     uv: { brew: 'uv', winget: 'astral-sh.uv' },
+    pango: { brew: 'pango', apt: 'libpango1.0-dev libcairo2-dev pkg-config', dnf: 'pango-devel cairo-devel pkgconf-pkg-config', pacman: 'pango cairo pkgconf' },
     gh: { brew: 'gh', winget: 'GitHub.cli', choco: 'gh', apt: 'gh', dnf: 'gh', pacman: 'github-cli' },
     git: { brew: 'git', winget: 'Git.Git', apt: 'git', dnf: 'git', pacman: 'git' },
   }[name];
@@ -76,8 +81,8 @@ export function installPlan(name, { platform = process.platform, repo, hasBin = 
   }
   if (name === 'uv') return { cmd: 'sh', args: ['-c', 'curl -LsSf https://astral.sh/uv/install.sh | sh'], label: 'uv', addPath: path.join(os.homedir(), '.local', 'bin') };
   if (hasBin('apt-get')) return { cmd: 'sh', args: ['-c', `sudo apt-get update && sudo apt-get install -y --no-install-recommends ${pkgs.apt}`], label: name };
-  if (hasBin('dnf')) return { cmd: 'sudo', args: ['dnf', 'install', '-y', pkgs.dnf], label: name };
-  if (hasBin('pacman')) return { cmd: 'sudo', args: ['pacman', '-S', '--noconfirm', pkgs.pacman], label: name };
+  if (hasBin('dnf')) return { cmd: 'sudo', args: ['dnf', 'install', '-y', ...pkgs.dnf.split(' ')], label: name };
+  if (hasBin('pacman')) return { cmd: 'sudo', args: ['pacman', '-S', '--noconfirm', ...pkgs.pacman.split(' ')], label: name };
   return { manual: `install ${name} with your package manager and run the same command again` };
 }
 

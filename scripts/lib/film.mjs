@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const ENGINES = ['hyperframes', 'motion-reel'];
+export const ENGINES = ['hyperframes', 'motion-reel', 'manim'];
 export const FORMATS = { '9x16': [1080, 1920], '16x9': [1920, 1080], '1x1': [1080, 1080] };
 
 export function loadFilm(filmPath, cwd = process.cwd()) {

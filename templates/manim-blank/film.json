@@ -1,0 +1,10 @@
+{
+  "title": "{{TITLE}}",
+  "engine": "manim",
+  "scene": "Film",
+  "duration": {{DURATION}},
+  "fps": 30,
+  "formats": {{FORMATS}},
+  "alpha": {{ALPHA}},
+  "exports": {{EXPORTS}}
+}

@@ -228,3 +228,30 @@ test('fcwm new --alpha: transparent ground and a mov-alpha export; refused for m
   assert.deepEqual(loadFilm('ov', root).config.exports, ['mov-alpha']);
   await assert.rejects(main(['new', 'x3', '--alpha', '--engine', 'motion-reel'], { cwd: root, ...quiet }), /HyperFrames/);
 });
+
+test('manim adapter: pinned through uv, film size per format, alpha via ProRes 4444', async () => {
+  const { MANIM_VERSION } = await import('../../engines/manim/adapter.mjs');
+  const mn = await loadAdapter('manim');
+  const root = tmp();
+  makeFilm(root, 'eq', { engine: 'manim', fps: 30, formats: ['16x9'] });
+  const film = loadFilm('eq', root);
+  const steps = mn.plan(film, 'full');
+  const render = steps.find((s) => s.cmd === 'uv');
+  assert.deepEqual(render.args.slice(0, 8), ['run', '--quiet', '--python', '3.12', '--with', `manim==${MANIM_VERSION}`, 'manim', 'render']);
+  assert.ok(render.args.join(' ').includes('-r 1920,1080 --fps 30'));
+  assert.equal(steps.at(-1).args.at(-1), path.join(film.renderDir, 'eq-16x9.mp4'));
+  const [alpha, prores] = mn.alphaSteps(film, 'mov-alpha', '16x9', '/x/out.mov');
+  assert.ok(alpha.args.includes('--transparent'));
+  assert.ok(prores.args.includes('yuva444p10le'));
+  assert.deepEqual(mn.requires(), ['ffmpeg', 'ffprobe', 'uv']);
+});
+
+test('fcwm new --engine manim: scene.py and film.json from the starter', async () => {
+  const root = tmp();
+  assert.equal(await main(['new', 'eq', '--engine', 'manim', '--format', '16x9', '--duration', '6'], { cwd: root, ...quiet }), 0);
+  const film = loadFilm('eq', root);
+  assert.equal(film.engine, 'manim');
+  assert.equal(film.duration, 6);
+  assert.equal(film.config.scene, 'Film');
+  assert.match(fs.readFileSync(path.join(root, 'eq', 'scene.py'), 'utf8'), /class Film\(Scene\)/);
+});

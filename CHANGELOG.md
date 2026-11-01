@@ -2,6 +2,11 @@
 
 ## 0.3.0 (unreleased)
 
+- Manim engine (experimental): Manim Community 0.22.1 (MIT) through `uv run --with`, pinned, not
+  vendored. `fcwm new <film> --engine manim` starts from a brand-neutral, LaTeX-free scene; films may
+  list several formats (each rendered on its own canvas); `--alpha` delivers ProRes 4444 / WebM alpha.
+  Contact sheets and stills are cut from a draft render with ffmpeg. `fcwm setup` installs Pango and
+  Cairo headers on Linux. Skill `fcwm-manim`; Manim added to the smoke test.
 - Extra delivery formats: `fcwm render <film> --export gif,webm,mov` (or `"exports"` in film.json)
   transcodes the delivered MP4 to GIF, WebM VP9 and ProRes 422 HQ. Transparency: `fcwm new <film>
   --alpha` starts a HyperFrames film on a transparent ground and renders `mov-alpha` (ProRes 4444) or

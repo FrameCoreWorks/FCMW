@@ -23,6 +23,7 @@ async function step(label, argv) {
 const films = [
   { engine: 'hyperframes', slug: 'smoke-hf', extra: [] },
   { engine: 'motion-reel', slug: 'smoke-mr', extra: ['--engine', 'motion-reel'] },
+  { engine: 'manim', slug: 'smoke-mn', extra: ['--engine', 'manim', '--alpha'] },
 ].filter((f) => !only || f.engine === only);
 
 for (const f of films) {
