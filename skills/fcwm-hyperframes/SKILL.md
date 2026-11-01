@@ -68,8 +68,9 @@ and tiles one snapshot per beat into `render/contact_<format>_p1.png` and a half
 them as the fcwm skill's quality gate says, fix the three weakest spots, repeat until every score is 8+.
 Then `fcwm render <film>` and report the QA lines as they are.
 
-Reading the check: it exits with code 2 and writes no sheet when text overlaps or overflows; the message
-names the element by selector (give important elements an `id` so you can find them). Mark a deliberate
+Reading the check: it exits with code 2 and writes no sheet when text overlaps or overflows, or when text
+stays off the frame (`text_off_frame`: shorten the line, make it smaller or wrap it; the starter title
+shrinks to fit by itself). The full report is `render/check.json`. The message names the element by selector (give important elements an `id` so you can find them). Mark a deliberate
 overlap with `data-layout-allow-overlap` on the element. `canvas_overflow` notes during a push or slide
 transition are expected (the scenes are meant to be off canvas). Warnings that point at `motion.md` or
 `look.md` refer to HyperFrames' own docs (`npx hyperframes@<version> docs`); the same advice is in the

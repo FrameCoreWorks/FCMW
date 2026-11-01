@@ -79,5 +79,5 @@ if ($Have -and (-not $Want -or $Want -eq $Have) -and (Test-Path (Join-Path $App 
 }
 
 # No `exit` here: this runs inside the user's own PowerShell window, which `exit` would close.
-& node (Join-Path $App 'scripts\fcwm.mjs') run @args
+& node (Join-Path $App 'scripts\fcwm.mjs') run --full @args
 if ($LASTEXITCODE) { Write-Host "fcwm: finished with exit code $LASTEXITCODE" }

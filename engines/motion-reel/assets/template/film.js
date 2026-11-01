@@ -91,7 +91,9 @@ function sceneEnd(ctx, u) {
 
 M.film({
   fonts: [font(100, 800, DISPLAY), font(40, 500, UI)],
-  images: { hero: 'assets/shots/desktop_viewport.png', heroMobile: 'assets/shots/mobile_viewport.png' },
+  // the product card shows a screenshot once you add one, for example
+  // images: { hero: 'assets/shots/desktop.png', heroMobile: 'assets/shots/mobile.png' },
+  images: {},
   hits: HITS,
   draw(ctx, u, t, IMG) {
     if (u < 8) sceneHeadline(ctx, u);

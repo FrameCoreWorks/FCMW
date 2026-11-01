@@ -84,12 +84,28 @@ export function safeZone(boxes, format, [W, H]) {
 }
 
 // The same frames rendered twice must be byte-identical. renderStills(tag) returns [{t, file}].
-export async function determinism(renderStills) {
+// minPsnr (dB) allows the sub-pixel noise a real GPU adds to WebGL frames (motion-reel on hardware GL):
+// pairs that differ but stay at or above it count as near-identical and pass. A logic bug (state carried
+// between frames, unseeded randomness) moves whole shapes and drops far below 40 dB.
+export function psnr(a, b) {
+  const r = spawnSync('ffmpeg', ['-hide_banner', '-nostats', '-i', a, '-i', b, '-lavfi', 'psnr', '-f', 'null', '-'], { encoding: 'utf8' });
+  const m = /average:(inf|[\d.]+)/.exec(r.stderr || '');
+  return m ? (m[1] === 'inf' ? Infinity : Number(m[1])) : NaN;
+}
+
+export async function determinism(renderStills, { minPsnr = null, compare = psnr } = {}) {
   const a = await renderStills('a');
   const b = await renderStills('b');
   if (a.length === 0 || a.length !== b.length) return { pass: false, checked: a.map((x) => x.t), diffs: [], error: `the two passes wrote ${a.length} and ${b.length} stills` };
-  const diffs = a.filter((x, i) => !fs.readFileSync(x.file).equals(fs.readFileSync(b[i].file))).map((x) => x.t);
-  return { pass: diffs.length === 0, checked: a.map((x) => x.t), diffs };
+  const differ = a.map((x, i) => [x, b[i]]).filter(([x, y]) => !fs.readFileSync(x.file).equals(fs.readFileSync(y.file)));
+  const near = [], diffs = [];
+  for (const [x, y] of differ) {
+    const db = minPsnr == null ? NaN : compare(x.file, y.file);
+    if (db >= minPsnr) near.push({ t: x.t, psnr: +db.toFixed(1) }); else diffs.push(x.t);
+  }
+  const r = { pass: diffs.length === 0, checked: a.map((x) => x.t), diffs };
+  if (near.length) r.nearIdentical = near;
+  return r;
 }
 
 export function checkVideo(file, { fps, allowBlank = [] } = {}) {

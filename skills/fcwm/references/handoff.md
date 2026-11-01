@@ -4,6 +4,17 @@ Use this when the agent cannot run the render itself (a chat app, a phone, a san
 tools). The user ends up with one folder that holds everything, pastes one line into the Terminal, and
 the finished film lands in that same folder. Always run these steps in order.
 
+**In a chat app's code sandbox (ChatGPT, Claude.ai and similar) never try to render.** Do not launch a
+browser or Chromium, install engines, take snapshots or run `fcwm`: the sandbox cannot render, and a
+failed attempt only wastes the user's time. Do not report that you could not render; rendering on the
+user's computer or in their GitHub Actions is the plan, not a fallback. Check the film by reading its
+code (timing, text, the render contract), then go straight to step 1. The visual review happens after
+the user's render: ask them to send the contact sheet (`render/contact_*.png`) and score it then.
+
+**Never assume the user's operating system.** Ask which one they use (macOS, Windows or Linux) before
+giving path tips or a command, or give all three plus the GitHub Actions variant. Remember the answer
+for the rest of the conversation.
+
 ## 1. One self-contained film folder
 
 Write every file the render needs into one folder named after the film (lowercase, digits, dashes),
@@ -25,7 +36,8 @@ connected. Then tell the user, in their language, how to put it on their disk, f
 
 ## 2. Ask for the folder's path
 
-Ask once: "Where did you put the folder? Paste its full path." Tell them how to copy it:
+Ask once: "Where did you put the folder? Paste its full path." Tell them how to copy it on their
+system (all three if you do not know it yet):
 
 - macOS: select the folder in Finder, press Option+Cmd+C (Copy as Pathname), or drag the folder into
   the Terminal window.
@@ -72,8 +84,9 @@ as `''` on Windows. Add ` --check` at the end for contact sheets only (the quali
 ` --cloud` to render in GitHub Actions instead (step 5).
 
 Give the command in its own code block, one command per block, and say what it does in two lines:
-"It installs only what is missing (Node.js, FFmpeg, the engine), then renders into
-`<path>/render/`. It can take a few minutes the first time."
+"The first time it sets up the whole render toolkit (Node.js, FFmpeg and every FCWM engine), so any
+film renders later without another download, then renders into `<path>/render/`. The first run takes a
+while (about 1 GB, mostly Blender); later runs skip everything already installed."
 
 What the first-time command does:
 
@@ -81,9 +94,9 @@ What the first-time command does:
    says how).
 2. Downloads FCWM into `~/.fcwm/app` (Windows: `%USERPROFILE%\.fcwm\app`), or updates it when a newer
    version is out. Skipped when it is already there.
-3. Runs `fcwm run '<path>'`: detects the tools this film needs (FFmpeg; Chromium for motion-reel; uv
-   for a Python score; HyperFrames downloads itself on first use), installs only the missing ones,
-   renders and runs the automated QA.
+3. Runs `fcwm run --full '<path>'`: detects the whole render toolkit (FFmpeg, uv, Chromium for
+   motion-reel, HyperFrames and its Chrome, Manim, Blender's bpy module; Pango on Linux), installs only
+   the missing pieces, renders and runs the automated QA. `fcwm setup` does the same without a film.
 
 ## 4. Remembering what is installed
 

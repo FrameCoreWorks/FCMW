@@ -7,8 +7,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sheetTimes, tileSheets, clearSheets } from '../../scripts/lib/contact.mjs';
 
-export const BPY_VERSION = '5.2.3';  // Blender 5.2 LTS
-export const PYTHON = '3.13';        // the only Python the bpy wheels are built for
+import { BPY_VERSION, BPY_PYTHON as PYTHON } from '../../scripts/lib/versions.mjs';
+export { BPY_VERSION, PYTHON };
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const RUNNER = path.join(REPO, 'engines', 'blender', 'render.py');
 const FF = ['-hide_banner', '-loglevel', 'error', '-y'];

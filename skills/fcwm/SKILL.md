@@ -47,7 +47,8 @@ Ask only for what is missing, in one round:
 ## 3. Pick the engine
 
 `fcwm engines` prints `<repo>/engines/catalog.json`: each engine's purpose, tier, status and licence.
-Use only engines with status `ready` or `experimental` (say "experimental" out loud). Before building,
+Use only engines with status `ready` or `experimental` (for `experimental`, say once that it is new).
+Before building,
 tell the user the engine and its tier; for anything other than `free`, add the licence limit in one line.
 
 | Job | Engine | Tier |
@@ -107,12 +108,15 @@ key in chat, and follow `<repo>/skills/connecting-services`.
 
 ## 5. When the user renders (no shell here, or the user's own computer)
 
-Follow `references/handoff.md` step by step:
+A chat app's code sandbox (ChatGPT, Claude.ai) counts as "no shell" for rendering: never try to render,
+start Chromium or install engines there, and never report a failed attempt. Ask the user's operating
+system; never assume one. Follow `references/handoff.md` step by step:
 
 1. Write every file into one self-contained film folder and tell the user how to put it on their disk.
 2. Ask for the folder's full path on their disk or volume (spaces, `&` and accents are fine).
-3. Give one command for their OS: the first-time line installs only what is missing (Node.js, FFmpeg,
-   engines), then renders into `<folder>/render/`; later the short `fcwm run` line. `fcwm command
+3. Give one command for their OS: the first-time line sets up the whole render toolkit (Node.js,
+   FFmpeg, every engine; only what is missing), then renders into `<folder>/render/`; later the short
+   `fcwm run` line. `fcwm command
    <folder> --os macos|windows|linux [--next] [--cloud]` prints the exact line.
 4. Tell the user that FCWM tracks what is installed (`~/.fcwm/state.json`, re-checked on every run), so
    later commands contain no installation.

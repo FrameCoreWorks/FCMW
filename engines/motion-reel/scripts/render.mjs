@@ -121,7 +121,8 @@ async function openPages(browser, url, n) {
 }
 const shoot = async (page, t, file) => {
   await page.evaluate((t) => window.seek(t), t);
-  return page.screenshot({ type: 'png', animations: 'disabled', caret: 'hide', ...(file ? { path: file } : {}) });
+  // a path-traced frame can keep the GPU busy for minutes before the page can paint: no 30 s screenshot limit
+  return page.screenshot({ type: 'png', animations: 'disabled', caret: 'hide', timeout: PATHTRACE ? 1800000 : 30000, ...(file ? { path: file } : {}) });
 };
 
 // Render a list of {t, file} jobs across the worker pages.

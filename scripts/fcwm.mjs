@@ -5,8 +5,8 @@
 //                                    [--duration 15] [--bpm 120] [--title "..."] [--alpha] [--lottie [file]] [--brand <kit>]
 //   node scripts/fcwm.mjs render <film> [--check | --at 3.2,7.5] [--format 9x16] [--export gif,webm,mov,mov-alpha,webm-alpha] [--no-qa]
 //   node scripts/fcwm.mjs qa <film | video.mp4> [--determinism]
-//   node scripts/fcwm.mjs run <folder> [--check] [--cloud [--repo fcwm-renders]]   install what is missing, then render
-//   node scripts/fcwm.mjs setup [<folder>]           show what is installed and what a film still needs
+//   node scripts/fcwm.mjs run <folder> [--check] [--full] [--cloud [--repo fcwm-renders]]   install what is missing (--full: every engine), then render
+//   node scripts/fcwm.mjs setup [<folder>] [--list]  install the whole render toolkit (or what a folder needs); --list only shows
 //   node scripts/fcwm.mjs command <folder> --os macos|windows|linux [--next] [--cloud]   the line to paste
 //   node scripts/fcwm.mjs doctor
 //   node scripts/fcwm.mjs engines
@@ -14,17 +14,18 @@
 //
 // Every command takes --dry-run (print the steps, run nothing). Exit codes: 0 ok, 1 failed, 2 missing tool.
 import fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from './lib/args.mjs';
 import { loadFilm, loadAdapter, ENGINES, FORMATS } from './lib/film.mjs';
 import { describe, runSteps } from './lib/pipeline.mjs';
 import { checkTools, hasPlaywright } from './lib/tools.mjs';
-import { byStillTime } from './lib/contact.mjs';
+import { byStillTime, sheetTimes, tileSheets, clearSheets } from './lib/contact.mjs';
 import { parseExports, exportSteps, exportPath, EXPORTS } from './lib/export.mjs';
 import { listKits, initKit, loadKit, checkKit, applyKit, kitDir, kitsDir } from './lib/brand.mjs';
 import { checkVideo, determinism, summarize, alphaChannel, probe } from '../qa/checks.mjs';
-import { requirementsFor, ensure, detect, readState, statePath, fcwmHome } from './lib/setup.mjs';
+import { requirementsFor, ensure, detect, readState, statePath, fcwmHome, FULL, chromiumPath } from './lib/setup.mjs';
 import { handoffCommand, normalizeOs } from './lib/handoff.mjs';
 import { cloudRender, cloudPlan } from './lib/cloud.mjs';
 
@@ -40,7 +41,7 @@ class UserError extends Error { constructor(msg, code = 1) { super(msg); this.co
 const USAGE = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 15).map((l) => l.replace(/^\/\/ ?/, '')).join('\n');
 
 export async function main(argv, { cwd = process.cwd(), log = console.log } = {}) {
-  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'pathtrace', 'alpha', 'no-qa', 'determinism', 'help', 'cloud', 'next'] });
+  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'pathtrace', 'alpha', 'no-qa', 'determinism', 'help', 'cloud', 'next', 'full', 'list'] });
   const [cmd, target] = a._;
   if (!cmd || a.help || cmd === 'help') { log(USAGE); return 0; }
   if (cmd === 'engines') return engines(log);
@@ -76,9 +77,12 @@ async function doctor(log) {
     log(m ? `${n === 'uv' ? 'opt ' : 'FAIL'} ${n}: ${m.hint}${n === 'uv' ? ' (only for motion-reel scores written in Python)' : ''}` : `ok   ${n}`);
   }
   const pw = await hasPlaywright([process.cwd(), REPO]);
-  log(pw ? 'ok   playwright (motion-reel)' : 'FAIL playwright (motion-reel): in the FCWM folder run  npm install && npx playwright install chromium');
+  const chrome = pw && chromiumPath([process.cwd(), REPO]);
+  log(!pw ? 'FAIL playwright (motion-reel): in the FCWM folder run  npm install, then  node scripts/fcwm.mjs setup'
+    : chrome ? `ok   playwright and its Chromium (motion-reel)  ${chrome}`
+    : 'FAIL Chromium for Playwright is not downloaded (motion-reel): run  node scripts/fcwm.mjs setup');
   const hard = r.missing.filter((m) => m.name !== 'uv');
-  return hard.length || major < 22 || !pw ? 2 : 0;
+  return hard.length || major < 22 || !chrome ? 2 : 0;
 }
 
 async function newFilm(slug, a, cwd, log) {
@@ -127,7 +131,6 @@ async function prepare(target, a, cwd, log) {
   const film = loadFilm(target, cwd);
   const entry = engineEntry(film.engine);
   if (entry.tier !== 'free') log(`note: ${entry.name} is "${entry.tier}" (${entry.license}). ${entry.license_note || entry.notes || ''}`);
-  if (entry.status === 'experimental') log(`note: the ${entry.name} engine is experimental in FCWM ${JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'))).version}.`);
   const html = path.join(film.dir, 'index.html');
   if (fs.existsSync(html) && LOADS_GSAP.test(fs.readFileSync(html, 'utf8')))
     log('note: this film loads GSAP, which is "restricted" (GSAP Standard licence: free, custom terms with a no-compete clause, not open source).');
@@ -146,7 +149,7 @@ async function render(target, a, cwd, log) {
     throw new UserError(`a HyperFrames film renders only in its own format (${film.formats[0]}); make another film for ${formats.join(', ')}`);
   const steps = adapter.plan(film, mode, { at: String(a.at || ''), formats });
   const kinds = mode === 'full' ? parseExports(a.export ?? film.config.exports) : [];
-  if (mode === 'full') steps.push(previewStep(film, formats[0]), ...exportSteps(film, adapter, formats, kinds));
+  if (mode === 'full') steps.push(previewStep(film, formats[0]), ...finalSheetSteps(film, formats), ...exportSteps(film, adapter, formats, kinds));
   if (a['dry-run']) { log(describe(steps)); return 0; }
   await requireRenderTools(film, adapter);
   await runSteps(steps, { log });
@@ -159,6 +162,27 @@ async function requireRenderTools(film, adapter) {
   await requireTools(adapter.requires(film));
   if (film.engine === 'motion-reel' && !(await hasPlaywright([film.root, REPO])))
     throw new UserError('missing: playwright. In the FCWM folder run  npm install && npx playwright install chromium', 2);
+}
+
+// After a full render the contact sheets come from the finished video, so they never show an older
+// --check (one frame per beat, or every half second without beats.json).
+function finalSheetSteps(film, formats) {
+  return [{ label: 'contact sheets from the finished video', fn: () => {
+    clearSheets(film.renderDir);
+    const dir = path.join(film.renderDir, '.sheet-frames');
+    for (const f of formats) {
+      fs.rmSync(dir, { recursive: true, force: true });
+      fs.mkdirSync(dir, { recursive: true });
+      const src = path.join(film.renderDir, `${film.slug}-${f}.mp4`);
+      const files = sheetTimes(film).map((t, i) => {
+        const out = path.join(dir, `${String(i).padStart(3, '0')}-at-${t}s.png`);
+        const r = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-ss', String(t), '-i', src, '-frames:v', '1', out], { encoding: 'utf8' });
+        return r.status === 0 && fs.existsSync(out) ? out : null;
+      }).filter(Boolean);
+      if (files.length) tileSheets(files, film.renderDir, { prefix: `_${f}` });
+    }
+    fs.rmSync(dir, { recursive: true, force: true });
+  } }];
 }
 
 function previewStep(film, format) {
@@ -211,7 +235,8 @@ async function qaFilm(film, formats, a, log) {
       const tagged = path.join(film.renderDir, `determinism-${tag}`);
       fs.mkdirSync(tagged, { recursive: true });
       return files.map((n, i) => { const p = path.join(tagged, n); fs.copyFileSync(path.join(stillsDir, n), p); return { t: at[i] ?? n, file: p }; });
-    });
+    }, { minPsnr: film.engine === 'motion-reel' ? 50 : null });  // WebGL on a real GPU adds sub-pixel noise
+    if (report.determinism.nearIdentical) log(`note: ${report.determinism.nearIdentical.map((n) => `t=${n.t}s ${n.psnr} dB`).join(', ')} differ below what the eye sees (GPU rounding, 50 dB or more): counted as identical`);
     log(summarize({ determinism: report.determinism }));
     ok &&= report.determinism.pass;
   }
@@ -262,8 +287,9 @@ async function runFolder(target, a, cwd, log) {
     if (!r.ok) throw new UserError(`still missing: ${r.missing.join(', ')}`, 2);
     for (const film of films) await cloudRender({ film, repoDir: REPO, home: fcwmHome(), repo: a.repo || 'fcwm-renders', ref: a.ref || 'main', mode: a.check ? 'check' : 'full', log });
   } else {
-    const need = [...new Set(films.flatMap(requirementsFor))];
-    log(`FCWM ${VERSION}: checking the tools for ${films.map((f) => f.slug).join(', ')}`);
+    // --full (the one-line installer): the whole render toolkit, so every engine works from now on
+    const need = [...new Set([...(a.full ? FULL : []), ...films.flatMap(requirementsFor)])];
+    log(`FCWM ${VERSION}: checking the ${a.full ? 'full render toolkit' : 'tools'} for ${films.map((f) => f.slug).join(', ')}`);
     const r = await ensure(need, { repo: REPO, version: VERSION, log, dryRun: a['dry-run'] });
     if (!a['dry-run'] && !r.ok) throw new UserError(`still missing: ${r.missing.join(', ')}. ${r.manual.join(' ')}`, 2);
     if (!a['dry-run']) log(`installed tools are recorded in ${statePath()}; the next render skips them.`);
@@ -280,14 +306,23 @@ async function runFolder(target, a, cwd, log) {
 const defaultApp = () => !process.env.FCWM_HOME && path.resolve(REPO) === path.join(fcwmHome(), 'app');
 
 async function setup(target, a, cwd, log) {
+  // `fcwm setup` installs the whole render toolkit (every engine); with a folder, only what its films need.
+  // --list only shows what is there.
   const films = target ? filmsIn(target, cwd) : [];
-  const need = films.length ? [...new Set(films.flatMap(requirementsFor))] : ['ffmpeg', 'chromium', 'uv', 'git', 'gh'];
-  const found = detect(need, { repo: REPO });
+  const need = films.length ? [...new Set(films.flatMap(requirementsFor))] : FULL;
   log(`FCWM ${VERSION} in ${REPO}, Node ${process.versions.node}`);
-  for (const n of need) log(`${found[n] ? 'ok     ' : 'missing'} ${n}${found[n] ? `  ${found[n]}` : ''}`);
-  const state = readState();
-  log(state ? `last check: ${state.checked} (${statePath()})` : `no checks recorded yet (${statePath()})`);
-  return need.every((n) => found[n]) ? 0 : 2;
+  if (a.list) {
+    const found = detect(need, { repo: REPO });
+    for (const n of need) log(`${found[n] ? 'ok     ' : 'missing'} ${n}${found[n] ? `  ${found[n]}` : ''}`);
+    const state = readState();
+    log(state ? `last check: ${state.checked} (${statePath()})` : `no checks recorded yet (${statePath()})`);
+    return need.every((n) => found[n]) ? 0 : 2;
+  }
+  const r = await ensure(need, { repo: REPO, version: VERSION, log, dryRun: a['dry-run'] });
+  if (a['dry-run']) return 0;
+  if (!r.ok) { log(`still missing: ${r.missing.join(', ')}. ${r.manual.join(' ')}`); return 2; }
+  log(`render toolkit ready (${need.join(', ')}); recorded in ${statePath()}`);
+  return 0;
 }
 
 function command(target, a, cwd, log) {
