@@ -53,9 +53,20 @@ test('requirementsFor: per engine, uv only for a Python score', () => {
 test('installPlan: the package manager of each OS, or a manual step', () => {
   const yes = () => true, no = () => false;
   assert.deepEqual(installPlan('ffmpeg', { platform: 'darwin', hasBin: yes }).args, ['install', 'ffmpeg']);
-  assert.match(installPlan('ffmpeg', { platform: 'darwin', hasBin: no }).manual, /brew\.sh/);
+  // a Mac without Homebrew: per-user installs, no administrator password
+  assert.equal(installPlan('ffmpeg', { platform: 'darwin', hasBin: no }).portable, 'ffmpeg');
+  assert.equal(installPlan('gh', { platform: 'darwin', hasBin: no }).portable, 'gh');
+  assert.equal(installPlan('uv', { platform: 'darwin', hasBin: no }).portable, 'uv');
+  assert.match(installPlan('manim', { platform: 'darwin', hasBin: no }).manual, /Homebrew/);
+  assert.deepEqual(installPlan('manim', { platform: 'darwin', hasBin: yes }).cmd, 'uv');
+  assert.deepEqual(installPlan('git', { platform: 'darwin', hasBin: no }).args, ['--install']);
+  assert.match(installPlan('pango', { platform: 'darwin', hasBin: no }).manual, /brew\.sh/);
+  // Windows without winget, Scoop or Chocolatey
+  assert.equal(installPlan('ffmpeg', { platform: 'win32', hasBin: no }).portable, 'ffmpeg');
+  assert.equal(installPlan('uv', { platform: 'win32', hasBin: no }).portable, 'uv');
   assert.deepEqual(installPlan('ffmpeg', { platform: 'win32', hasBin: yes }).args.slice(0, 3), ['install', '--id', 'Gyan.FFmpeg']);
-  assert.match(installPlan('gh', { platform: 'linux', hasBin: (b) => b === 'apt-get' }).args[1], /apt-get install -y --no-install-recommends gh$/);
+  assert.match(installPlan('gh', { platform: 'linux', hasBin: (b) => b === 'apt-get' || b === 'sudo' }).args[1], /apt-get install -y --no-install-recommends gh$/);
+  assert.equal(installPlan('gh', { platform: 'linux', hasBin: (b) => b === 'apt-get' }).portable, 'gh');  // no sudo: per user
   assert.deepEqual(installPlan('chromium', { platform: 'linux', repo: '/r' }).args, ['playwright', 'install', '--with-deps', 'chromium']);
   assert.deepEqual(installPlan('chromium', { platform: 'darwin', repo: '/r' }).args, ['playwright', 'install', 'chromium']);
   assert.deepEqual(installPlan('ffmpeg', { platform: 'win32', hasBin: (b) => b === 'choco' }).args, ['install', 'ffmpeg', '-y', '--no-progress']);

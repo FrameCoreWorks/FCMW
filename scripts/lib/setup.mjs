@@ -8,6 +8,7 @@ import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
 import { which } from './tools.mjs';
 import { run, buildCommand } from './proc.mjs';
+import { portableFor, installPortable, usePortableBin } from './portable.mjs';
 import { HYPERFRAMES_VERSION, HYPERFRAMES_ENV, MANIM_VERSION, MANIM_PYTHON, BPY_VERSION, BPY_PYTHON } from './versions.mjs';
 
 // The whole render toolkit, in install order (Pango before Manim, uv before the Python engines). The
@@ -74,6 +75,11 @@ export function detect(names, { repo, platform = process.platform, envPath } = {
       if (!which('uv', { path: envPath, platform })) { found[n] = null; continue; }
       found[n] = quiet('uv', uvArgs(n, true)).status === 0 ? `uv cache (${pyEngine[n][1]})` : null;
     }
+    else if (n === 'git' && platform === 'darwin') {
+      // /usr/bin/git is only a stub until Apple's Command Line Tools are installed
+      const g = which('git', { path: envPath, platform });
+      found.git = g && (g !== '/usr/bin/git' || spawnSync('xcode-select', ['-p']).status === 0) ? g : null;
+    }
     else found[n] = which(n, { path: envPath, platform });
   }
   return found;
@@ -88,6 +94,10 @@ export function installPlan(name, { platform = process.platform, repo, hasBin = 
     return { ...npx, args: ['playwright', 'install', ...(platform === 'linux' ? ['--with-deps'] : []), 'chromium'], label: 'Chromium for Playwright' };
   }
   if (name === 'hyperframes') return { ...npx, args: ['-y', `hyperframes@${HYPERFRAMES_VERSION}`, 'browser', 'ensure'], env: HYPERFRAMES_ENV, label: `HyperFrames ${HYPERFRAMES_VERSION} and its Chrome` };
+  // Manim's pycairo builds against Cairo, which a Mac gets only from Homebrew
+  if (name === 'manim' && platform === 'darwin' && !hasBin('brew') && !hasBin('pkg-config')) {
+    return { manual: 'Manim needs Cairo and Pango, which a Mac gets from Homebrew: install Homebrew (https://brew.sh), run "brew install cairo pango pkg-config", then run the same command again. Every other engine works without it.' };
+  }
   if (name in pyEngine) return { cmd: 'uv', args: uvArgs(name, false), label: `${pyEngine[name][1]} into uv's cache` };
   const pkgs = {
     ffmpeg: { brew: 'ffmpeg', winget: 'Gyan.FFmpeg', apt: 'ffmpeg', dnf: 'ffmpeg', pacman: 'ffmpeg' },
@@ -99,16 +109,23 @@ export function installPlan(name, { platform = process.platform, repo, hasBin = 
   if (!pkgs) return { manual: `install ${name} and make sure it is on PATH` };
   if (platform === 'darwin') {
     if (hasBin('brew')) return { cmd: 'brew', args: ['install', pkgs.brew], label: name };
-    return { manual: `Homebrew is missing. Install it from https://brew.sh, then run the same command again.` };
+    // No Homebrew (most Macs): per-user installs that need no administrator password
+    const port = portableFor(name, { platform });
+    if (port) return { portable: name, label: port.label, size: port.size };
+    if (name === 'git') return { cmd: 'xcode-select', args: ['--install'], label: "Apple's Command Line Tools (git)", after: "A macOS window asks to install the Command Line Tools: click Install, wait until it finishes, then run the same command again." };
+    return { manual: `install ${name} (or Homebrew from https://brew.sh), then run the same command again` };
   }
   if (platform === 'win32') {
     if (hasBin('winget')) return { cmd: 'winget', args: ['install', '--id', pkgs.winget, '-e', '--accept-source-agreements', '--accept-package-agreements'], label: name, newPath: true };
     // Windows without winget (Server, LTSC): Scoop (per user) or Chocolatey (needs an admin window)
     if (hasBin('scoop') && pkgs.scoop !== false) return { cmd: 'scoop', args: ['install', pkgs.scoop || name], label: name };
     if (hasBin('choco') && pkgs.choco !== false) return { cmd: 'choco', args: ['install', pkgs.choco || name, '-y', '--no-progress'], label: name };
+    const port = portableFor(name, { platform });
+    if (port) return { portable: name, label: port.label, size: port.size };
     return { manual: `winget is missing (App Installer from the Microsoft Store). Install ${name} by hand and run the same command again.` };
   }
   if (name === 'uv') return { cmd: 'sh', args: ['-c', 'curl -LsSf https://astral.sh/uv/install.sh | sh'], label: 'uv', addPath: path.join(os.homedir(), '.local', 'bin') };
+  if (name === 'gh' && !hasBin('sudo') && portableFor('gh', { platform })) return { portable: 'gh', label: portableFor('gh', { platform }).label };
   if (hasBin('apt-get')) return { cmd: 'sh', args: ['-c', `sudo apt-get update && sudo apt-get install -y --no-install-recommends ${pkgs.apt}`], label: name };
   if (hasBin('dnf')) return { cmd: 'sudo', args: ['dnf', 'install', '-y', ...pkgs.dnf.split(' ')], label: name };
   if (hasBin('pacman')) return { cmd: 'sudo', args: ['pacman', '-S', '--noconfirm', ...pkgs.pacman.split(' ')], label: name };
@@ -147,9 +164,18 @@ export async function ensure(names, { repo, version, log = console.log, dryRun =
     const p = installPlan(n, { repo });
     if (p.note) { log(`note: ${p.note}`); continue; }
     if (p.manual) { manual.push(`${n}: ${p.manual}`); continue; }
-    log(`install ${p.label}${SIZES[n] ? ` (${SIZES[n]}, once)` : ''}: ${[p.cmd, ...p.args].join(' ')}`);
+    const size = SIZES[n] || p.size;
+    if (p.portable) {
+      log(`install ${p.label}${size ? ` (${size}, once)` : ''} into ${path.join(fcwmHome(), 'bin')}`);
+      if (dryRun || !install) continue;
+      try { await installPortable(p.portable, { home: fcwmHome(), log }); usePortableBin(fcwmHome()); installed.push(n); }
+      catch (e) { manual.push(`${n}: ${e.message}`); }
+      continue;
+    }
+    log(`install ${p.label}${size ? ` (${size}, once)` : ''}: ${[p.cmd, ...p.args].join(' ')}`);
     if (dryRun || !install) continue;
     const { code } = await run(p.cmd, p.args, { cwd: p.cwd, env: p.env });
+    if (p.after) { manual.push(`${n}: ${p.after}`); continue; }
     if (code !== 0) { manual.push(`${n}: "${[p.cmd, ...p.args].join(' ')}" failed with exit code ${code}`); continue; }
     if (p.newPath && process.platform === 'win32') refreshWindowsPath();
     if (p.addPath) process.env.PATH = `${p.addPath}${path.delimiter}${process.env.PATH}`;

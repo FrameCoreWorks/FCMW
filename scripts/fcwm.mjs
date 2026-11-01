@@ -10,6 +10,7 @@
 //   node scripts/fcwm.mjs setup [<folder>] [--list]  install the whole render toolkit (or what a folder needs); --list only shows
 //   node scripts/fcwm.mjs command <folder> --os macos|windows|linux [--next] [--cloud [--public]]   the line to paste
 //   node scripts/fcwm.mjs doctor
+//   node scripts/fcwm.mjs uninstall [--yes] [--all]   remove FCWM from this computer (brand kits kept unless --all)
 //   node scripts/fcwm.mjs engines
 //   node scripts/fcwm.mjs brand list | init <kit> | check <kit>   optional brand kits, saved once outside the repo
 //
@@ -31,9 +32,13 @@ import { runSummary } from './lib/summary.mjs';
 import { requirementsFor, ensure, detect, readState, statePath, fcwmHome, FULL, chromiumPath } from './lib/setup.mjs';
 import { handoffCommand, normalizeOs } from './lib/handoff.mjs';
 import { cloudRender, cloudPlan } from './lib/cloud.mjs';
+import { usePortableBin } from './lib/portable.mjs';
+import { uninstall } from './lib/uninstall.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8')).version;
+// Tools FCWM installed per user (Node, FFmpeg, gh on a Mac without Homebrew) come first on PATH.
+usePortableBin(fcwmHome());
 const catalog = JSON.parse(fs.readFileSync(path.join(REPO, 'engines', 'catalog.json'), 'utf8'));
 
 // A film loads GSAP when a script tag or an import names it, or it calls gsap.*; a comment does not count.
@@ -41,14 +46,15 @@ export const LOADS_GSAP = /<script[^>]*gsap|from\s+['"][^'"]*gsap|\bgsap\.(timel
 
 class UserError extends Error { constructor(msg, code = 1) { super(msg); this.code = code; } }
 
-const USAGE = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 15).map((l) => l.replace(/^\/\/ ?/, '')).join('\n');
+const USAGE = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 16).map((l) => l.replace(/^\/\/ ?/, '')).join('\n');
 
 export async function main(argv, { cwd = process.cwd(), log = console.log } = {}) {
-  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'pathtrace', 'alpha', 'no-qa', 'determinism', 'help', 'cloud', 'next', 'full', 'list', 'public', 'score', 'preview'] });
+  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'pathtrace', 'alpha', 'no-qa', 'determinism', 'help', 'cloud', 'next', 'full', 'list', 'public', 'score', 'preview', 'yes', 'all'] });
   const [cmd, target] = a._;
   if (!cmd || a.help || cmd === 'help') { log(USAGE); return 0; }
   if (cmd === 'engines') return engines(log);
   if (cmd === 'doctor') return doctor(log);
+  if (cmd === 'uninstall') { uninstall(fcwmHome(), { yes: !!a.yes, all: !!a.all, log }); return 0; }
   if (cmd === 'new') return newFilm(target, a, cwd, log);
   if (cmd === 'render') return render(target, a, cwd, log);
   if (cmd === 'qa') return qa(target, a, cwd, log);
@@ -327,7 +333,13 @@ async function runFolder(target, a, cwd, log) {
     const need = [...new Set([...(a.full ? FULL : []), ...films.flatMap(requirementsFor)])];
     log(`FCWM ${VERSION}: checking the ${a.full ? 'full render toolkit' : 'tools'} for ${films.map((f) => f.slug).join(', ')}`);
     const r = await ensure(need, { repo: REPO, version: VERSION, log, dryRun: a['dry-run'] });
-    if (!a['dry-run'] && !r.ok) throw new UserError(`still missing: ${r.missing.join(', ')}. ${r.manual.join(' ')}`, 2);
+    // Only what these films need blocks the render; an engine for later that failed to install is a note.
+    const needed = new Set(films.flatMap(requirementsFor));
+    const blocking = r.missing.filter((n) => needed.has(n));
+    const later = r.missing.filter((n) => !needed.has(n));
+    const why = (names) => r.manual.filter((m) => names.some((n) => m.startsWith(`${n}:`))).join(' ');
+    if (!a['dry-run'] && blocking.length) throw new UserError(`still missing: ${blocking.join(', ')}. ${why(blocking)}`, 2);
+    if (!a['dry-run'] && later.length) log(`note: not installed yet (only needed for other engines, this film renders without them): ${later.join(', ')}. ${why(later)}`);
     if (!a['dry-run']) log(`installed tools are recorded in ${statePath()}; the next render skips them.`);
     let code = 0;
     for (const film of films) code = Math.max(code, await render(film.dir, a, cwd, log));

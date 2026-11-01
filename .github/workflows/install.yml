@@ -83,3 +83,51 @@ jobs:
           $out = & ([scriptblock]::Create((Get-Content scripts\install.ps1 -Raw))) (Join-Path $Films 'install-test') --check *>&1 | Out-String
           Write-Host $out
           if ($out -notmatch 'nothing to install') { throw 'expected every tool to be skipped' }
+
+  # A computer with nothing on it: no Node.js and no package manager (a Mac without Homebrew, Windows
+  # without winget). Node, FFmpeg and the GitHub CLI must arrive per user, without admin rights.
+  mac-fresh:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install and render with system tools only
+        env:
+          FCWM_SRC: ${{ github.workspace }}
+          FCWM_HOME: ${{ runner.temp }}/fcwm-fresh
+        run: |
+          export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+          for t in node brew ffmpeg; do if command -v $t; then echo "expected no $t on PATH"; exit 1; fi; done
+          FILMS="$RUNNER_TEMP/Moje filmy"
+          mkdir -p "$FILMS"
+          bash scripts/install.sh "$FILMS/missing" || true   # installs Node + FCWM, then fails on the missing folder
+          (cd "$FILMS" && "$FCWM_HOME/bin/node" "$FCWM_HOME/app/scripts/fcwm.mjs" new fresh-test --duration 2)
+          bash scripts/install.sh "$FILMS/fresh-test" --check
+          ls "$FILMS/fresh-test/render"
+          "$FCWM_HOME/bin/ffmpeg" -version | head -1
+          "$FCWM_HOME/bin/node" --input-type=module -e "const m = await import('$FCWM_HOME/app/scripts/lib/portable.mjs'); console.log(await m.installPortable('gh', { home: process.env.FCWM_HOME }))"
+          "$FCWM_HOME/bin/gh" --version
+
+  windows-fresh:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install and render with system tools only
+        shell: pwsh
+        env:
+          FCWM_SRC: ${{ github.workspace }}
+          FCWM_HOME: ${{ runner.temp }}\fcwm-fresh
+        run: |
+          $env:Path = "$env:SystemRoot\system32;$env:SystemRoot;$env:SystemRoot\System32\WindowsPowerShell\v1.0;$env:SystemRoot\System32\Wbem;$PSHOME"
+          if (Get-Command node, winget, ffmpeg, choco, scoop -ErrorAction SilentlyContinue) { throw 'expected a bare PATH' }
+          $Films = Join-Path $env:RUNNER_TEMP 'Moje filmy'
+          New-Item -ItemType Directory -Force -Path $Films | Out-Null
+          & ([scriptblock]::Create((Get-Content scripts\install.ps1 -Raw))) (Join-Path $Films 'missing')
+          Push-Location $Films; node "$env:FCWM_HOME\app\scripts\fcwm.mjs" new fresh-test --duration 2; Pop-Location
+          & ([scriptblock]::Create((Get-Content scripts\install.ps1 -Raw))) (Join-Path $Films 'fresh-test') --check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Get-ChildItem (Join-Path $Films 'fresh-test\render')
+          & "$env:FCWM_HOME\bin\ffmpeg.exe" -version | Select-Object -First 1
