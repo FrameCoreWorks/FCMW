@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 // FCWM command line: new film, render, quality checks. Works on macOS, Windows and Linux.
 //
-//   node scripts/fcwm.mjs new <name> [--engine hyperframes|motion-reel|manim|blender] [--3d] [--pathtrace] [--format 9x16,16x9]
+//   node scripts/fcwm.mjs new <name> [--engine hyperframes|motion-reel|manim|blender] [--3d] [--score] [--pathtrace] [--format 9x16,16x9]
 //                                    [--duration 15] [--bpm 120] [--title "..."] [--alpha] [--lottie [file]] [--brand <kit>]
 //   node scripts/fcwm.mjs render <film> [--check | --at 3.2,7.5] [--format 9x16] [--export gif,webm,mov,mov-alpha,webm-alpha] [--no-qa]
 //   node scripts/fcwm.mjs qa <film | video.mp4> [--determinism]
-//   node scripts/fcwm.mjs run <folder> [--check] [--full] [--cloud [--repo fcwm-renders]]   install what is missing (--full: every engine), then render
+//   node scripts/fcwm.mjs run <folder> [--check] [--full] [--cloud [--public] [--repo name]]   install what is missing (--full: every engine), then render;
+//                                   --cloud: GitHub Actions in a temporary repository deleted after download
 //   node scripts/fcwm.mjs setup [<folder>] [--list]  install the whole render toolkit (or what a folder needs); --list only shows
-//   node scripts/fcwm.mjs command <folder> --os macos|windows|linux [--next] [--cloud]   the line to paste
+//   node scripts/fcwm.mjs command <folder> --os macos|windows|linux [--next] [--cloud [--public]]   the line to paste
 //   node scripts/fcwm.mjs doctor
 //   node scripts/fcwm.mjs engines
 //   node scripts/fcwm.mjs brand list | init <kit> | check <kit>   optional brand kits, saved once outside the repo
@@ -25,6 +26,7 @@ import { byStillTime, sheetTimes, tileSheets, clearSheets } from './lib/contact.
 import { parseExports, exportSteps, exportPath, EXPORTS } from './lib/export.mjs';
 import { listKits, initKit, loadKit, checkKit, applyKit, kitDir, kitsDir } from './lib/brand.mjs';
 import { checkVideo, determinism, summarize, alphaChannel, probe } from '../qa/checks.mjs';
+import { videoComposition } from '../qa/composition.mjs';
 import { requirementsFor, ensure, detect, readState, statePath, fcwmHome, FULL, chromiumPath } from './lib/setup.mjs';
 import { handoffCommand, normalizeOs } from './lib/handoff.mjs';
 import { cloudRender, cloudPlan } from './lib/cloud.mjs';
@@ -41,7 +43,7 @@ class UserError extends Error { constructor(msg, code = 1) { super(msg); this.co
 const USAGE = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 15).map((l) => l.replace(/^\/\/ ?/, '')).join('\n');
 
 export async function main(argv, { cwd = process.cwd(), log = console.log } = {}) {
-  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'pathtrace', 'alpha', 'no-qa', 'determinism', 'help', 'cloud', 'next', 'full', 'list'] });
+  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'pathtrace', 'alpha', 'no-qa', 'determinism', 'help', 'cloud', 'next', 'full', 'list', 'public', 'score'] });
   const [cmd, target] = a._;
   if (!cmd || a.help || cmd === 'help') { log(USAGE); return 0; }
   if (cmd === 'engines') return engines(log);
@@ -89,14 +91,15 @@ async function newFilm(slug, a, cwd, log) {
   if (!slug || !/^[a-z0-9][a-z0-9-]*$/.test(slug)) throw new UserError('usage: fcwm new <name>  (lowercase letters, digits and dashes)');
   const dest = path.join(cwd, slug);
   if (fs.existsSync(dest)) throw new UserError(`${dest} already exists; pick another name (nothing was changed)`);
-  const engine = (a['3d'] || a.pathtrace) ? 'motion-reel' : (a.engine || 'hyperframes');
+  // --3d: three.js inside HyperFrames by default (motion-reel only when asked for); --pathtrace is motion-reel's
+  const engine = a.pathtrace ? 'motion-reel' : (a.engine || 'hyperframes');
   if (!ENGINES.includes(engine)) throw new UserError(`--engine must be one of ${ENGINES.join(', ')}`);
   const formats = String(a.format || '9x16').split(',');
   for (const f of formats) if (!FORMATS[f]) throw new UserError(`--format ${f} is not one of ${Object.keys(FORMATS).join(', ')}`);
   if (a.alpha && !['hyperframes', 'manim', 'blender'].includes(engine)) throw new UserError('--alpha (transparent background) is available for HyperFrames, Manim and Blender films; motion-reel renders opaque frames');
   if (a.lottie && engine !== 'hyperframes') throw new UserError('--lottie plays a Lottie animation inside a HyperFrames film; drop --engine');
   const adapter = await loadAdapter(engine);
-  const steps = adapter.scaffoldSteps(cwd, slug, { lottie: a.lottie, duration: Number(a.duration) || 15, formats, bpm: Number(a.bpm) || 120, threeD: !!(a['3d'] || a.pathtrace), pathtrace: !!a.pathtrace, title: a.title, alpha: !!a.alpha });
+  const steps = adapter.scaffoldSteps(cwd, slug, { lottie: a.lottie, duration: Number(a.duration) || 15, formats, bpm: Number(a.bpm) || 120, score: !!a.score, threeD: !!(a['3d'] || a.pathtrace), pathtrace: !!a.pathtrace, title: a.title, alpha: !!a.alpha });
   if (a['dry-run']) { log(describe(steps)); return 0; }
   if (a.brand) { const k = loadKit(a.brand); const bad = checkKit(k, kitDir(a.brand)); if (bad.length) throw new UserError(`brand kit "${a.brand}":\n  ${bad.join('\n  ')}`); }
   await runSteps(steps, { log });
@@ -206,9 +209,14 @@ async function qaFilm(film, formats, a, log) {
     const r = checkVideo(file, { fps: film.fps, allowBlank: film.config.allowBlank || [] });
     const [W, H] = FORMATS[f];
     r.size = { pass: r.info.width === W && r.info.height === H, got: `${r.info.width}x${r.info.height}`, want: `${W}x${H}` };
+    // composition: the misses that separate a draft from a finished film (empty hook, crowded 9:16,
+    // copied scenes, standing still); film.json allowEmptyStart / allowRepeats / allowStill opt out
+    r.composition = videoComposition(file, { duration: film.duration, format: f, config: film.config });
     report.videos.push(r);
-    log(`QA ${path.basename(file)}\n${summarize(r)}`);
-    ok &&= [r.loudness, r.frameRate, r.blankFrames, r.size].every((c) => c.pass);
+    log(`QA ${path.basename(file)}\n${summarize(r)}\n${summarize(r.composition)}`);
+    const why = compositionAdvice(r.composition);
+    if (why) log(why);
+    ok &&= [r.loudness, r.frameRate, r.blankFrames, r.size, ...Object.values(r.composition)].every((c) => c.pass);
   }
   for (const kind of a.kinds || []) {
     for (const f of formats) {
@@ -245,14 +253,30 @@ async function qaFilm(film, formats, a, log) {
   return ok ? 0 : 1;
 }
 
+// One line per failed composition check: what is wrong and the usual fix (skills/fcwm, first-draft rules).
+export function compositionAdvice(c) {
+  const tips = {
+    firstFrame: 'frame 0 is (nearly) empty: start on the hook, the first frame must already show it',
+    fill: `9:16 content is too small or sits high (height ${c.fill?.height}, centre ${c.fill?.centre}): span the middle 60 % of the height, larger type`,
+    repeats: `scenes look copied (seconds ${(c.repeats?.pairs || []).map((p) => p.join('/')).join(', ')}): give each scene its own layout and entrance`,
+    motion: `the picture stands still (${(c.motion?.spans || []).map((s) => `${s[0]}-${s[1]} s`).join(', ') || `${Math.round((c.motion?.stillShare || 0) * 100)} % of the film`}): keep something moving, hold at most 1.5 s before the end card`,
+  };
+  return Object.entries(tips).filter(([k]) => c[k] && !c[k].pass).map(([k, v]) => `  fix ${k}: ${v}`).join('\n');
+}
+
 async function qa(target, a, cwd, log) {
   if (!target) throw new UserError('usage: fcwm qa <film | video.mp4>');
   const p = path.resolve(cwd, target);
   if (fs.existsSync(p) && fs.statSync(p).isFile()) {
     await requireTools(['ffmpeg', 'ffprobe'], log);
     const r = checkVideo(p, { fps: a.fps ? Number(a.fps) : undefined });
-    log(summarize(r));
-    return [r.loudness, r.frameRate, r.blankFrames].every((c) => c.pass) ? 0 : 1;
+    const { width, height } = r.info;
+    const format = a.format || Object.entries(FORMATS).find(([, [w, h]]) => w * height === h * width)?.[0];
+    r.composition = videoComposition(p, { format });
+    log(`${summarize(r)}\n${summarize(r.composition)}`);
+    const why = compositionAdvice(r.composition);
+    if (why) log(why);
+    return [r.loudness, r.frameRate, r.blankFrames, ...Object.values(r.composition)].every((c) => c.pass) ? 0 : 1;
   }
   const { film } = await prepare(target, a, cwd, log);
   await requireTools(['ffmpeg', 'ffprobe'], log);
@@ -283,9 +307,9 @@ async function runFolder(target, a, cwd, log) {
     const need = ['git', 'gh'];
     log(`FCWM ${VERSION}: checking the tools for a GitHub Actions render`);
     const r = await ensure(need, { repo: REPO, version: VERSION, log, dryRun: a['dry-run'] });
-    if (a['dry-run']) { for (const f of films) log(cloudPlan({ film: f, repo: a.repo, ref: a.ref, mode: a.check ? 'check' : 'full' }).map((l, i) => `${i + 1}. ${l}`).join('\n')); return 0; }
+    if (a['dry-run']) { for (const f of films) log(cloudPlan({ film: f, repo: a.repo, ref: a.ref, mode: a.check ? 'check' : 'full', visibility: a.public ? 'public' : 'private' }).map((l, i) => `${i + 1}. ${l}`).join('\n')); return 0; }
     if (!r.ok) throw new UserError(`still missing: ${r.missing.join(', ')}`, 2);
-    for (const film of films) await cloudRender({ film, repoDir: REPO, home: fcwmHome(), repo: a.repo || 'fcwm-renders', ref: a.ref || 'main', mode: a.check ? 'check' : 'full', log });
+    for (const film of films) await cloudRender({ film, repoDir: REPO, home: fcwmHome(), repo: a.repo, ref: a.ref || 'main', mode: a.check ? 'check' : 'full', visibility: a.public ? 'public' : 'private', log });
   } else {
     // --full (the one-line installer): the whole render toolkit, so every engine works from now on
     const need = [...new Set([...(a.full ? FULL : []), ...films.flatMap(requirementsFor)])];
@@ -299,7 +323,7 @@ async function runFolder(target, a, cwd, log) {
   }
   if (a['dry-run']) return 0;
   log(`\nfinished files: ${films.map((f) => f.renderDir).join(', ')}`);
-  log(`next time this computer only needs:\n  ${handoffCommand({ folder: films.length === 1 ? films[0].dir : path.resolve(cwd, target), os, first: false, cloud: !!a.cloud, app: defaultApp() ? undefined : REPO })}`);
+  log(`next time this computer only needs:\n  ${handoffCommand({ folder: films.length === 1 ? films[0].dir : path.resolve(cwd, target), os, first: false, cloud: !!a.cloud, public: !!a.public, app: defaultApp() ? undefined : REPO })}`);
   return 0;
 }
 
@@ -329,7 +353,7 @@ function command(target, a, cwd, log) {
   if (!target) throw new UserError('usage: fcwm command <film folder> --os macos|windows|linux [--next] [--cloud]');
   let os;
   try { os = normalizeOs(a.os || { darwin: 'macos', win32: 'windows' }[process.platform] || 'linux'); } catch (e) { throw new UserError(e.message); }
-  log(handoffCommand({ folder: target, os, first: !a.next, cloud: !!a.cloud, ref: a.ref || 'main' }));
+  log(handoffCommand({ folder: target, os, first: !a.next, cloud: !!a.cloud, public: !!a.public, ref: a.ref || 'main' }));
   return 0;
 }
 

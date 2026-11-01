@@ -11,6 +11,18 @@ user's computer or in their GitHub Actions is the plan, not a fallback. Check th
 code (timing, text, the render contract), then go straight to step 1. The visual review happens after
 the user's render: ask them to send the contact sheet (`render/contact_*.png`) and score it then.
 
+**Two replies, never one.** Reply 1: the ZIP as a direct download link, how to unzip it, and two
+questions (their operating system if you do not know it, and the full path of the unzipped folder).
+No render command, no guessed path (not `~/Downloads/...`, not "put it in Downloads") in reply 1:
+stop and wait. Reply 2, only after the user pasted the real path: the two commands built from exactly
+that path. If you do not know that FCWM already ran on that computer, give the first-time command (it
+is always safe; the short `node ~/.fcwm/...` line fails on a computer without FCWM).
+
+**Deliver every format asked for.** A HyperFrames film has one format, so 9:16, 1:1 and 16:9 are
+three film folders (`<film>-9x16`, `<film>-1x1`, `<film>-16x9`), each composed for its frame, in one
+ZIP under one parent folder; the command takes the parent folder and renders all of them. Never deliver
+fewer formats than the brief asked for without saying so first.
+
 **Never assume the user's operating system.** Ask which one they use (macOS, Windows or Linux) before
 giving path tips or a command, or give all three plus the GitHub Actions variant. Remember the answer
 for the rest of the conversation.
@@ -31,7 +43,10 @@ Paths inside the film are relative (`assets/logo.svg`), never absolute, so the f
 the user puts it. Nothing else goes in it: no notes for the agent, no copies of FCWM.
 
 Deliver the folder the way the host allows: a zip, a download, or files written into a folder the user
-connected. Then tell the user, in their language, how to put it on their disk, for example: "Unzip
+connected. In a chat app with a code sandbox (ChatGPT, Claude.ai), write `<film>.zip` in the sandbox
+(in ChatGPT: `/mnt/data/<film>.zip`) and give it as a direct download link in your reply (in ChatGPT a
+`sandbox:/mnt/data/<film>.zip` link), never as a pointer to a library, a project file list or "the
+files panel". The user must be able to click once and get the ZIP. Then tell the user, in their language, how to put it on their disk, for example: "Unzip
 `<film>.zip` and move the `<film>` folder wherever you keep projects, on any disk or volume."
 
 ## 2. Ask for the folder's path
@@ -87,7 +102,8 @@ Always give two separate commands, each in its own code block, labelled for the 
 (Terminal on macOS and Linux, PowerShell on Windows): **render on this computer** (the line above) and
 **render in GitHub Actions** (the same line with ` --cloud`, step 5). Under them, in a few lines: the
 first run installs whatever is missing; the GitHub variant needs a GitHub login in the browser the first
-time and uses the user's own Actions minutes (limits in step 5). For the local command, say what it does
+time and uses the user's own Actions minutes in a temporary repository that is deleted after the
+download (private by default, ` --public` for free minutes; step 5). For the local command, say what it does
 in two lines:
 "The first time it sets up the whole render toolkit (Node.js, FFmpeg and every FCWM engine), so any
 film renders later without another download, then renders into `<path>/render/`. The first run takes a
@@ -127,13 +143,23 @@ How it works, so you answer questions correctly:
 
 Recommend it when the user has no suitable computer, or the film is long and 3-D. Say first:
 
-- It runs on the user's OWN GitHub account: FCWM creates a private repository `fcwm-renders` there,
-  pushes the film's source, runs the render on GitHub's machines and downloads the result into
-  `<path>/render/`. Nothing runs on anyone else's account.
-- Minutes count on their account: free and unlimited for public repositories; private repositories on
-  the free plan include 2,000 minutes a month. GitHub's machines have no GPU, so 3-D renders are slow.
-- The first time, a browser window opens to log in to GitHub (the GitHub CLI, `gh`, is installed if
-  missing).
+- It runs on the user's OWN GitHub account: FCWM creates a temporary repository there
+  (`fcwm-render-<film>-<time>`), pushes the film's source, runs the render on GitHub's machines,
+  downloads the result into `<path>/render/` and then deletes the repository, so nothing is left behind.
+  Nothing runs on anyone else's account. If the render fails, the repository stays so its log can be
+  read, and FCWM prints the line that deletes it.
+- The first time, the browser opens twice at most: to log in to GitHub, and to allow FCWM to delete
+  repositories (GitHub permission `delete_repo`), so the clean-up works. The GitHub CLI (`gh`) is
+  installed if missing.
+- Minutes and privacy, ask the user which they want:
+  - **Private (default):** only they can see the film; GitHub Free includes 2,000 Actions minutes a
+    month (Pro and Team 3,000). A 2-D film takes about 1-3 minutes, a 3-D film 5-10 or more.
+  - **Public (` --cloud --public`):** Actions minutes are free and unlimited on GitHub's standard
+    machines, but anyone can see the film's files and the render for the few minutes the repository
+    exists. Not for unreleased client work.
+- GitHub's machines have no GPU, so 3-D renders are slow there.
+- Advanced: ` --repo <name>` uses (or creates) one named repository and keeps it; FCWM then deletes only
+  the run's download package, which would otherwise count toward the account's 500 MB storage.
 
 The command is the same as above with ` --cloud` at the end. Users without a terminal at all can do the
 same in the browser: `docs/render-in-github-actions.md` in the FCWM repository, "By hand".

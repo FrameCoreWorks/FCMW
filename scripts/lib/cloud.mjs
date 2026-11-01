@@ -2,9 +2,14 @@
 // into the same folder. Uses the GitHub CLI (gh) with the user's own login; FCWM holds no tokens.
 //
 // 1. gh is logged in (else `gh auth login` runs interactively in the browser).
-// 2. A repository <login>/<repo> (default fcwm-renders, private) exists or is created.
+// 2. A temporary repository <login>/fcwm-render-<film>-<time> is created for this one render: private by
+//    default, public with --public (Actions minutes on standard runners are free in public repositories,
+//    but anyone can see the film's files while the repository exists).
 // 3. The film's source (not render/ or .fcwm/) is pushed to films/<slug>/, with the workflow file.
 // 4. The workflow runs; FCWM waits for it, then downloads the artifact into <film>/render/.
+// 5. After a successful download the temporary repository is deleted (gh needs the delete_repo scope,
+//    asked for once in the browser). A failed render keeps it so its logs can be read.
+//    With --repo <name> FCWM uses that repository instead, keeps it, and deletes only the run's artifact.
 import fs from 'node:fs';
 import path from 'node:path';
 import { run } from './proc.mjs';
@@ -33,19 +38,38 @@ export function copySource(from, to) {
   } });
 }
 
-export function cloudPlan({ film, repo = 'fcwm-renders', ref = 'main', mode = 'full' }) {
+const stamp = (d = new Date()) => d.toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
+export function tempRepoName(slug, d) {
+  const base = String(slug).toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'film';
+  return `fcwm-render-${base}-${stamp(d)}`;
+}
+
+export function cloudPlan({ film, repo, ref = 'main', mode = 'full', visibility = 'private' }) {
+  const name = repo || tempRepoName(film.slug);
   return [
     'gh auth status  (else: gh auth login, in the browser, with your own GitHub account)',
-    `gh repo create <you>/${repo} --private  (only if it does not exist yet)`,
+    repo ? `gh repo create <you>/${repo} --${visibility}  (only if it does not exist yet; it is kept)`
+      : `gh repo create <you>/${name} --${visibility}  (temporary, for this render only)`,
     `copy ${film.dir} (without render/ and .fcwm/) to films/${film.slug}/ and add .github/workflows/${WORKFLOW}`,
     'git commit and push to your repository',
     `gh workflow run ${WORKFLOW} -f film=films/${film.slug} -f mode=${mode} -f fcwm_ref=${ref}`,
     'gh run watch <run> --exit-status',
     `gh run download <run> -n ${film.slug}-render -D ${path.join(film.renderDir)}`,
+    repo ? 'delete the run\'s artifact on GitHub (the repository stays)'
+      : `gh repo delete <you>/${name} --yes  (after a successful download; asks once for the delete_repo permission)`,
   ];
 }
 
-export async function cloudRender({ film, repoDir, home, repo = 'fcwm-renders', ref = 'main', mode = 'full', log = console.log }) {
+// gh shows the token's scopes in `gh auth status`; a token from `gh auth login --web` has no delete_repo.
+async function canDelete(log) {
+  const st = await gh(['auth', 'status', '-h', 'github.com']);
+  if (/delete_repo/.test(st.stdout + st.stderr)) return true;
+  log('FCWM deletes the temporary render repository when the film is downloaded. GitHub asks once, in the browser, for permission to delete repositories (scope delete_repo).');
+  const r = await run('gh', ['auth', 'refresh', '-h', 'github.com', '-s', 'delete_repo']);
+  return r.code === 0;
+}
+
+export async function cloudRender({ film, repoDir, home, repo, ref = 'main', mode = 'full', visibility = 'private', log = console.log }) {
   if ((await gh(['auth', 'status'])).code !== 0) {
     log('GitHub CLI is not logged in: opening the GitHub login (use your own account).');
     await must('gh', ['auth', 'login', '--hostname', 'github.com', '--git-protocol', 'https', '--web']);
@@ -53,16 +77,23 @@ export async function cloudRender({ film, repoDir, home, repo = 'fcwm-renders', 
   const login = (await gh(['api', 'user', '--jq', '.login'])).out;
   const id = (await gh(['api', 'user', '--jq', '.id'])).out;
   if (!login) throw new Error('could not read your GitHub login from gh');
-  const full = `${login}/${repo}`;
-  log(`render on your own GitHub account: ${full} (Actions minutes are counted on this account)`);
+  const temporary = !repo;
+  const name = repo || tempRepoName(film.slug);
+  const full = `${login}/${name}`;
+  const deletable = temporary && await canDelete(log);
+  log(`render on your own GitHub account: ${full} (${visibility})`);
+  log(visibility === 'public'
+    ? 'PUBLIC repository: Actions minutes are free, but anyone can see this film\'s files and render while the repository exists.'
+    : 'private repository: the render uses your account\'s Actions minutes (GitHub Free: 2,000 a month). Add --public for free minutes if the film may be seen by anyone.');
 
   if ((await gh(['repo', 'view', full, '--json', 'name'])).code !== 0) {
-    log(`creating private repository ${full}`);
-    await must('gh', ['repo', 'create', full, '--private', '--description', 'Film renders made with FCWM']);
+    log(`creating ${visibility} repository ${full}${temporary ? ' (temporary)' : ''}`);
+    await must('gh', ['repo', 'create', full, `--${visibility}`, '--description', temporary ? `Temporary FCWM render of ${film.slug}; deleted after download` : 'Film renders made with FCWM']);
   }
   await must('gh', ['auth', 'setup-git']);
 
-  const work = path.join(home, 'cloud', repo);
+  const work = path.join(home, 'cloud', name);
+  if (temporary) fs.rmSync(work, { recursive: true, force: true });
   if (!fs.existsSync(path.join(work, '.git'))) {
     fs.mkdirSync(path.dirname(work), { recursive: true });
     await must('gh', ['repo', 'clone', full, work]);
@@ -113,7 +144,18 @@ export async function cloudRender({ film, repoDir, home, repo = 'fcwm-renders', 
     fs.rmSync(tmp, { recursive: true, force: true });
     log(`downloaded into ${film.renderDir}`);
   }
-  if (watch.code !== 0) throw new Error(`the render failed on GitHub; see https://github.com/${full}/actions/runs/${runId}`);
+  if (watch.code !== 0) throw new Error(`the render failed on GitHub; see https://github.com/${full}/actions/runs/${runId}${temporary ? `\nthe repository is kept so you can read the logs; delete it later with: gh repo delete ${full} --yes` : ''}`);
   if (dl.code !== 0) throw new Error(`the render finished but the download failed; the files are at https://github.com/${full}/actions/runs/${runId}`);
-  return { repo: full, runId };
+
+  // clean up: nothing of this render stays on GitHub
+  if (temporary) {
+    fs.rmSync(work, { recursive: true, force: true });
+    const del = deletable ? await gh(['repo', 'delete', full, '--yes']) : { code: 1 };
+    log(del.code === 0 ? `deleted the temporary repository ${full}` : `could not delete ${full} (no delete_repo permission); delete it with: gh repo delete ${full} --yes`);
+  } else {
+    const arts = await gh(['api', `repos/${full}/actions/runs/${runId}/artifacts`, '--jq', '.artifacts[].id']);
+    for (const a of arts.out.split('\n').filter(Boolean)) await gh(['api', '-X', 'DELETE', `repos/${full}/actions/artifacts/${a}`]);
+    log(`deleted the run's artifact on GitHub (it counts toward your storage); ${full} is kept because you named it with --repo`);
+  }
+  return { repo: full, runId, deleted: temporary && deletable };
 }

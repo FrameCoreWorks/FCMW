@@ -1,6 +1,6 @@
 ---
 id: product-3d
-engine: any (expected: motion-reel --3d, or blender with a GPU)
+engine: any (expected: HyperFrames --3d, or Blender for photoreal light)
 format: 16x9
 duration: 6
 ---

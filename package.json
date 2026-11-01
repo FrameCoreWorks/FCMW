@@ -12,7 +12,7 @@
   "scripts": {
     "validate": "node scripts/validate.mjs",
     "inventory": "node scripts/inventory.mjs",
-    "test": "node --test lib/test/lib.test.mjs qa/test/checks.test.mjs scripts/test/cli.test.mjs scripts/test/services.test.mjs scripts/test/handoff.test.mjs evals/test/run.test.mjs",
+    "test": "node --test lib/test/lib.test.mjs qa/test/checks.test.mjs qa/test/composition.test.mjs scripts/test/cli.test.mjs scripts/test/services.test.mjs scripts/test/handoff.test.mjs evals/test/run.test.mjs",
     "fcwm": "node scripts/fcwm.mjs",
     "services": "node scripts/services.mjs"
   },

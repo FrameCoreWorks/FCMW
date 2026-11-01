@@ -11,9 +11,17 @@ review. `fcwm render <film>` runs them on every delivered file and writes `<film
 | Canvas size | Matches the format (9x16 1080x1920, 16x9 1920x1080, 1x1 1080x1080) | automatic |
 | Blank frames | No flat frame (luma range 3 or less) outside `film.json` `allowBlank: [[from, to]]` | automatic |
 | Exports | Every requested export exists at the film's size; `mov-alpha` / `webm-alpha` carry a real alpha channel | automatic |
+| First frame | Frame 0 has content (2 % of the pixels or more differ from the background); `allowEmptyStart` to opt out | automatic (`composition.mjs`) |
+| 9:16 fill | Median content box at least 45 % of the frame height, centred at 38 % or lower | automatic |
+| Repeats | No two frames 3 s or more apart look the same (PSNR 35 dB or more), outside the last 1.5 s; `allowRepeats` | automatic |
+| Motion | Frames 0.5 s apart: no 1.5 s with under 1 % of the pixels changing, still for at most 40 % of the film, outside the last 2.5 s; `allowStill` | automatic |
 | Determinism | Three frames rendered twice are byte-identical | `fcwm qa <film> --determinism` |
 | Safe zone | All text inside the platform's safe area (9x16: x 6-94 %, y 10-80 %) | `safeZone()` exists; not yet wired to a film, check by eye |
 | 3D z-fighting | No coplanar faces flickering in three.js scenes | `audit-zfight.mjs`, manual |
+
+The four composition checks catch what separated weaker models' films from strong ones in the 0.4.0
+evals (calibrated on those nine films: every Opus film passes, the judged misses fail). `film.json`
+`"composition": false` turns all four off.
 
 Rubric for the visual review (score 1 to 10, every category 8 or more): hook, readability at phone
 size, motion quality, variety, brief fit, sound sync.

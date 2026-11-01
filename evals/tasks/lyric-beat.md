@@ -1,6 +1,6 @@
 ---
 id: lyric-beat
-engine: any (expected: motion-reel with a synthesized score)
+engine: any (expected: HyperFrames with --score)
 format: 9x16
 duration: 12
 ---

@@ -6,8 +6,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sheetTimes, tileSheets, byStillTime, clearSheets } from '../../scripts/lib/contact.mjs';
 import { fcwmHome } from '../../scripts/lib/setup.mjs';
-import { copyLib, copyFonts } from '../../scripts/lib/film-assets.mjs';
+import { copyLib, copyFonts, copyThree, threeVersion } from '../../scripts/lib/film-assets.mjs';
 import { run } from '../../scripts/lib/proc.mjs';
+import { stemsIn, masterInto } from '../../scripts/lib/master.mjs';
+import { gridJSON } from '../motion-reel/adapter.mjs';
 
 import { HYPERFRAMES_VERSION, HYPERFRAMES_ENV as ENV } from '../../scripts/lib/versions.mjs';
 export { HYPERFRAMES_VERSION, ENV };
@@ -66,13 +68,14 @@ async function runCheck(film) {
 export default {
   id: 'hyperframes',
   tier: 'free',
-  requires: () => ['npx', 'ffmpeg', 'ffprobe'],
+  requires: (film) => ['npx', 'ffmpeg', 'ffprobe', ...(film && fs.existsSync(path.join(film.dir, 'audio', 'score.py')) ? ['uv'] : [])],
 
-  scaffoldSteps(root, slug, { duration = 15, formats = ['9x16'], title, alpha = false, lottie } = {}) {
+  scaffoldSteps(root, slug, { duration = 15, formats = ['9x16'], title, alpha = false, lottie, threeD = false, score = false, bpm } = {}) {
     if (formats.length > 1) throw new Error('a HyperFrames film is composed for one format; make one film per format');
     const [W, H] = SIZES[formats[0]];
     const dir = path.join(root, slug);
-    const template = lottie ? 'hyperframes-lottie' : 'hyperframes-blank';
+    if (lottie && threeD) throw new Error('--lottie and --3d are separate starters; pick one');
+    const template = lottie ? 'hyperframes-lottie' : threeD ? 'hyperframes-three' : 'hyperframes-blank';
     // --lottie with a file uses that animation; a bare --lottie starts from a neutral sample.
     const source = typeof lottie === 'string' ? path.resolve(root, lottie) : path.join(REPO, 'templates', template, 'sample.json');
     if (lottie && !/\.(lottie|json)$/i.test(source)) throw new Error('--lottie takes a .lottie or Lottie .json file');
@@ -87,7 +90,7 @@ export default {
         cmd: 'npm', args: ['pack', `@lottiefiles/dotlottie-web@${DOTLOTTIE_VERSION}`, '--silent'], cwd: cache },
       { label: 'unpack dotlottie-web', when: () => !cached(),
         cmd: 'tar', args: ['-xzf', `lottiefiles-dotlottie-web-${DOTLOTTIE_VERSION}.tgz`], cwd: cache });
-    steps.push({ label: `scaffold (FCWM HyperFrames ${lottie ? 'Lottie ' : ''}starter)`, fn: () => {
+    steps.push({ label: `scaffold (FCWM HyperFrames ${lottie ? 'Lottie ' : threeD ? 'three.js ' : ''}starter)`, fn: () => {
       const animation = lottie ? path.basename(source) : '';
       const vars = { W, H, DURATION: duration, FPS: 30, SIZE: Math.round(Math.min(W, H) * 0.13),
         BOX: Math.round(Math.min(W, H) * 0.8), ANIMATION: animation,
@@ -105,6 +108,10 @@ export default {
       copyLib(path.join(dir, 'lib', 'fcwm'));
       copyFonts(path.join(dir, 'fonts'));
       for (const d of ['assets', 'audio', 'docs']) fs.mkdirSync(path.join(dir, d));
+      if (threeD) copyThree(path.join(dir, 'lib', 'three'));
+      // --score: a synthesized score on a beat grid (beats.json, from --bpm), mixed and mastered by fcwm render
+      if (score) fs.writeFileSync(path.join(dir, 'beats.json'), JSON.stringify(gridJSON({ bpm: bpm || 120, duration }), null, 1) + '\n');
+      if (score) fs.copyFileSync(path.join(REPO, 'templates', 'motion-reel-score', 'score.py'), path.join(dir, 'audio', 'score.py'));
       if (lottie) {
         fs.copyFileSync(source, path.join(dir, 'assets', animation));
         const dest = path.join(dir, 'lib', 'dotlottie-web');
@@ -130,7 +137,12 @@ export default {
     // fill it in from this FCWM install, so the hand-off folder stays small and always current.
     const libDir = path.join(film.dir, 'lib', 'fcwm');
     const uses = () => /lib\/fcwm\//.test(fs.readFileSync(path.join(film.dir, 'index.html'), 'utf8'));
-    return [{ label: 'add FCWM lib (lib/fcwm/) the film imports', when: () => !fs.existsSync(libDir) && uses(), fn: () => copyLib(libDir) }, ...steps];
+    // the same for three.js (lib/three/three.module.js, MIT), which is too large to write from a chat
+    const threeDir = path.join(film.dir, 'lib', 'three');
+    const usesThree = () => /lib\/three\/three\.module\.js/.test(fs.readFileSync(path.join(film.dir, 'index.html'), 'utf8'));
+    return [{ label: 'add FCWM lib (lib/fcwm/) the film imports', when: () => !fs.existsSync(libDir) && uses(), fn: () => copyLib(libDir) },
+      { label: `add three.js ${threeVersion()} (lib/three/) the film imports`, when: () => !fs.existsSync(path.join(threeDir, 'three.module.js')) && usesThree(), fn: () => copyThree(threeDir) },
+      ...steps];
   },
 
   planSteps(film, mode, { at = '' } = {}) {
@@ -156,7 +168,17 @@ export default {
       ];
     }
     if (mode !== 'full') throw new Error(`hyperframes: unknown mode ${mode}`);
-    return [{ label: 'output folder', fn: () => fs.mkdirSync(renderDir, { recursive: true }) }, { label: `render ${format}`, ...hf(['render', dir, '-o', path.join(renderDir, `${slug}-${format}.mp4`),
-      '-f', String(film.fps), '-q', 'delivery', '--strict', '--quiet'], root) }];
+    const video = path.join(renderDir, `${slug}-${format}.mp4`);
+    return [
+      // a synthesized score (audio/score.py, uv) writes audio/music.wav (and sfx.wav) on the film's beat grid;
+      // dsp.py, the synthesis voices it imports, ships with FCWM (engines/motion-reel/scripts/, MIT)
+      { label: 'score: audio/score.py', when: () => fs.existsSync(path.join(dir, 'audio', 'score.py')),
+        cmd: 'uv', args: ['run', '--quiet', path.join(dir, 'audio', 'score.py')], cwd: root,
+        env: { MOTION_REEL_SKILL: path.join(REPO, 'engines', 'motion-reel') } },
+      { label: 'output folder', fn: () => fs.mkdirSync(renderDir, { recursive: true }) },
+      { label: `render ${format}`, ...hf(['render', dir, '-o', video, '-f', String(film.fps), '-q', 'delivery', '--strict', '--quiet'], root) },
+      { label: 'mix audio/ (music, sfx, vo) to -14 LUFS / -1 dBTP and mux', when: () => stemsIn(dir).length > 0,
+        fn: () => masterInto(video, stemsIn(dir)) },
+    ];
   },
 };

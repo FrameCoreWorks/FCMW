@@ -29,12 +29,14 @@
           "status": "experimental",
           "checked": "2026-11-01"
         }
-      ]
+      ],
+      "offer": "on request only",
+      "notes": "A small canvas toolkit (4 stars on 2026-11-01), vendored so its path-traced mode and existing films keep working. Not offered by default: 3-D goes to HyperFrames + three.js or Blender. Use only when the user asks for motion-reel or for path tracing."
     },
     {
       "id": "hyperframes",
       "name": "HyperFrames",
-      "purpose": "HTML and CSS compositions rendered to video: layouts, web-style motion, captions.",
+      "purpose": "HTML, CSS and WebGL compositions rendered to video: layouts, type, web-style motion, captions, 3-D with three.js, music-driven films with a synthesized score. The FCWM default.",
       "tier": "free",
       "license": "Apache-2.0",
       "upstream": "https://github.com/heygen-com/hyperframes",
@@ -43,7 +45,18 @@
       "status": "ready",
       "checked": "2026-11-01",
       "version": "0.8.226",
-      "stars": 76700
+      "stars": 76700,
+      "libraries": [
+        {
+          "name": "three.js",
+          "purpose": "3-D scenes inside a film (fcwm new --3d)",
+          "tier": "free",
+          "license": "MIT",
+          "upstream": "https://github.com/mrdoob/three.js",
+          "version": "0.187.0",
+          "stars": 117350
+        }
+      ]
     },
     {
       "id": "manim",

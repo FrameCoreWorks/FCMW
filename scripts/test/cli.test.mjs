@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { parseArgs } from '../lib/args.mjs';
 import { buildCommand, quoteWin } from '../lib/proc.mjs';
 import { checkTools } from '../lib/tools.mjs';
@@ -111,7 +112,7 @@ test('hyperframes adapter: pinned version, telemetry off, exact render args', as
   const root = tmp();
   makeFilm(root, 'h', { engine: 'hyperframes', fps: 30, formats: ['1x1'] });
   const film = loadFilm('h', root);
-  const r = hf.plan(film, 'full').find((s) => s.cmd);
+  const r = hf.plan(film, 'full').find((s) => s.cmd && s.args.includes('render'));
   assert.equal(HYPERFRAMES_VERSION, '0.8.226');
   assert.deepEqual(r.args, ['-y', 'hyperframes@0.8.226', 'render', film.dir, '-o', path.join(film.renderDir, 'h-1x1.mp4'),
     '-f', '30', '-q', 'delivery', '--strict', '--quiet']);
@@ -375,4 +376,42 @@ test('hyperframes: a hand-off film that imports ./lib/fcwm/ without carrying it 
   fill.fn();
   assert.ok(fs.existsSync(path.join(root, 'ho', 'lib', 'fcwm', 'blocks.js')));
   assert.equal(fill.when(), false);
+});
+
+test('hyperframes --3d and --score: three.js copied, beat grid and score starter, score and mix steps planned', async () => {
+  const hf = await loadAdapter('hyperframes');
+  const root = tmp();
+  const [step] = hf.scaffoldSteps(root, 'td', { duration: 6, formats: ['9x16'], threeD: true, score: true, bpm: 100 });
+  step.fn();
+  const dir = path.join(root, 'td');
+  assert.match(fs.readFileSync(path.join(dir, 'index.html'), 'utf8'), /lib\/three\/three\.module\.js/);
+  for (const f of ['three.module.js', 'three.core.js', 'LICENSE']) assert.ok(fs.existsSync(path.join(dir, 'lib', 'three', f)), f);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'beats.json'), 'utf8')).bpm, 100);
+  assert.ok(fs.existsSync(path.join(dir, 'audio', 'score.py')));
+  const film = loadFilm('td', root);
+  assert.ok(hf.requires(film).includes('uv'));
+  const labels = hf.plan(film, 'full').map((s) => s.label);
+  assert.ok(labels.indexOf('score: audio/score.py') < labels.indexOf('render 9x16'));
+  assert.ok(labels.some((l) => l.startsWith('mix audio/')));
+  // a film written in a chat imports three.js without carrying it: the plan adds it
+  fs.rmSync(path.join(dir, 'lib', 'three'), { recursive: true });
+  const add = hf.plan(film, 'check').find((s) => s.label.startsWith('add three.js'));
+  assert.ok(add.when());
+  add.fn();
+  assert.ok(fs.existsSync(path.join(dir, 'lib', 'three', 'three.module.js')));
+});
+
+test('master: audio/ stems mixed to -14 LUFS under the picture', { skip: spawnSync('ffmpeg', ['-version']).status !== 0 && 'no ffmpeg' }, async () => {
+  const { masterInto, stemsIn } = await import('../lib/master.mjs');
+  const { loudness } = await import('../../qa/checks.mjs');
+  const dir = tmp();
+  fs.mkdirSync(path.join(dir, 'audio'));
+  const v = path.join(dir, 'v.mp4');
+  spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=s=320x240:r=30', '-t', '4', '-pix_fmt', 'yuv420p', v]);
+  spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'sine=f=220:d=4', '-af', 'volume=0.05', '-ac', '2', path.join(dir, 'audio', 'music.wav')]);
+  spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'anoisesrc=d=0.3:a=0.3', '-ac', '2', path.join(dir, 'audio', 'sfx.wav')]);
+  assert.equal(stemsIn(dir).length, 2);
+  assert.ok(masterInto(v, stemsIn(dir)));
+  const r = loudness(v);
+  assert.ok(r.pass, JSON.stringify(r));
 });

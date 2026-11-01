@@ -13,9 +13,9 @@ way a user would. The briefs use fictional names only.
 | --- | --- | --- |
 | `promo-15s` | 9:16, 15 s | hook, three beats, end card, palette choice (HyperFrames) |
 | `chart-10s` | 16:9, 10 s | data accuracy, readable values, highlight (Manim or HyperFrames) |
-| `lyric-beat` | 9:16, 12 s | synthesized score, words on the beat grid, loudness (motion-reel) |
+| `lyric-beat` | 9:16, 12 s | synthesized score, words on the beat grid, loudness (HyperFrames `--score`) |
 | `logo-sting` | 1:1, 4 s | mark reveal, transparent ProRes 4444 next to the MP4 |
-| `product-3d` | 16:9, 6 s | 3-D object, studio light, camera move (motion-reel `--3d` or Blender) |
+| `product-3d` | 16:9, 6 s | 3-D object, studio light, camera move (HyperFrames `--3d` or Blender) |
 
 ## Running a model
 

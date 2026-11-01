@@ -20,10 +20,10 @@ export function normalizeOs(os) {
 }
 
 // `app` is where FCWM is installed when it is not the default ~/.fcwm/app (for example a git clone).
-export function handoffCommand({ folder, os, first = true, cloud = false, ref = 'main', app }) {
+export function handoffCommand({ folder, os, first = true, cloud = false, public: pub = false, ref = 'main', app }) {
   if (!folder) throw new Error('name the film folder');
   const o = normalizeOs(os);
-  const flags = cloud ? ' --cloud' : '';
+  const flags = cloud ? (pub ? ' --cloud --public' : ' --cloud') : '';
   if (o === 'windows') {
     const f = quotePs(folder);
     if (first) return `& ([scriptblock]::Create((irm ${rawUrl('install.ps1', ref)}))) ${f}${flags}`;

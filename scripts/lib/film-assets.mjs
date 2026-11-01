@@ -21,3 +21,14 @@ export function copyFonts(dest, names = ['display']) {
   put('OFL.txt', 'OFL.txt');
 }
 
+
+// three.js (MIT) for a HyperFrames 3-D film: the ES module build and its licence, from FCWM's own
+// node_modules (installed with FCWM), into <film>/lib/three/.
+const THREE_DIR = path.join(REPO, 'node_modules', 'three');
+export const threeVersion = () => JSON.parse(fs.readFileSync(path.join(THREE_DIR, 'package.json'), 'utf8')).version;
+export function copyThree(dest) {
+  if (!fs.existsSync(path.join(THREE_DIR, 'build', 'three.module.js'))) throw new Error(`three.js is missing in ${THREE_DIR}: run npm install in the FCWM folder`);
+  fs.mkdirSync(dest, { recursive: true });
+  for (const f of ['three.module.js', 'three.core.js']) fs.copyFileSync(path.join(THREE_DIR, 'build', f), path.join(dest, f));
+  fs.copyFileSync(path.join(THREE_DIR, 'LICENSE'), path.join(dest, 'LICENSE'));
+}

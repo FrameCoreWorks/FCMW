@@ -6,7 +6,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { handoffCommand, quoteSh, quotePs, normalizeOs } from '../lib/handoff.mjs';
 import { installPlan, requirementsFor, detect, ensure, writeState, readState, FULL } from '../lib/setup.mjs';
-import { copySource } from '../lib/cloud.mjs';
+import { copySource, tempRepoName, cloudPlan } from '../lib/cloud.mjs';
 import { main, filmsIn } from '../fcwm.mjs';
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "fcwm handoff & co's "));
@@ -141,4 +141,17 @@ test('fcwm command prints the line to paste', async () => {
   const lines = [];
   await main(['command', VOLUME, '--os', 'macos', '--next'], { log: (l) => lines.push(l) });
   assert.deepEqual(lines, [`node ~/.fcwm/app/scripts/fcwm.mjs run ${quoteSh(VOLUME)}`]);
+});
+
+test('cloud: a temporary repository per render, deleted after the download; --public on request', () => {
+  assert.equal(tempRepoName('Mój Film!', new Date('2026-11-01T16:40:05Z')), 'fcwm-render-m-j-film-20261101-164005');
+  const film = { dir: '/f/x', slug: 'x', renderDir: '/f/x/render' };
+  const plan = cloudPlan({ film, visibility: 'public' }).join('\n');
+  assert.match(plan, /gh repo create <you>\/fcwm-render-x-\d{8}-\d{6} --public/);
+  assert.match(plan, /gh repo delete/);
+  const kept = cloudPlan({ film, repo: 'renders' }).join('\n');
+  assert.match(kept, /--private .*it is kept/);
+  assert.doesNotMatch(kept, /gh repo delete/);
+  assert.equal(handoffCommand({ folder: '/a b', os: 'macos', first: false, cloud: true, public: true }),
+    `node ~/.fcwm/app/scripts/fcwm.mjs run ${quoteSh('/a b')} --cloud --public`);
 });

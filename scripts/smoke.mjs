@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // End-to-end smoke test: one short film per engine, created, rendered and checked with the real tools.
-//   node scripts/smoke.mjs [--keep] [--only hyperframes|motion-reel|pathtrace]
+//   node scripts/smoke.mjs [--keep] [--only hyperframes|hyperframes-3d|motion-reel|pathtrace]
 // Needs everything `fcwm doctor` checks. Used by .github/workflows/smoke.yml.
 import fs from 'node:fs';
 import os from 'node:os';
@@ -22,6 +22,7 @@ async function step(label, argv) {
 
 const films = [
   { engine: 'hyperframes', slug: 'smoke-hf', extra: [] },
+  { engine: 'hyperframes-3d', slug: 'smoke-h3', extra: ['--3d', '--score'] },
   { engine: 'motion-reel', slug: 'smoke-mr', extra: ['--engine', 'motion-reel'] },
   { engine: 'manim', slug: 'smoke-mn', extra: ['--engine', 'manim', '--alpha'] },
   { engine: 'lottie', slug: 'smoke-lt', extra: ['--lottie'] },
@@ -29,6 +30,10 @@ const films = [
 
 for (const f of films) {
   if ((await step(`${f.engine} new`, ['new', f.slug, '--duration', '3', ...f.extra])) !== 0) continue;
+  // starters are placeholders for the film's own content: the composition checks (empty hook, small
+  // 9:16 content, standing still) judge craft, not plumbing, and are tested in qa/test/composition.test.mjs
+  const cfgFile = path.join(dir, f.slug, 'film.json');
+  fs.writeFileSync(cfgFile, JSON.stringify({ ...JSON.parse(fs.readFileSync(cfgFile, 'utf8')), composition: false }, null, 2));
   await step(`${f.engine} check`, ['render', f.slug, '--check']);
   const sheet = path.join(dir, f.slug, 'render', 'contact_9x16_p1.png');
   if (!fs.existsSync(sheet)) failures.push(`${f.engine}: no contact sheet at ${sheet}`);

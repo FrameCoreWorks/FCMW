@@ -67,6 +67,8 @@ films) live in the FCWM repository root, two levels above this file.
 | Empty bottom in 9:16 | Compose each format for its shape: the subject fills the middle band (about 30-70 % of the height) and at least 70 % of the width; type that would fit a 16:9 frame is too small for 9:16 |
 | Empty or half-built first frame | Frame 0 is the thumbnail: the title or subject is already readable at t = 0 (start entrances a few tenths of a second before 0, as `recipes/film-blocks` does) |
 | No hook | The first second shows the film's strongest image or claim (the payoff, a bold word, a striking shape), not a logo, a dot or a slow build |
+| A slideshow: still text that fades between scenes | Something moves every second (type, camera, a shape, light); cuts and entrances on the beat; QA `motion` fails a still stretch of 1.5 s |
+| Silent social film | Music and hits on the cuts (`fcwm new --score`) unless the brief says silent |
 | A still shows a wrong number | Value labels show the final value and appear as the bar lands (`lib/chart.js`); a count-up uses the bar's own progress |
 | Ghost words overlapping | The outgoing element is gone (or clipped) before the incoming one reaches the same spot |
 | A repeated section looks copy-pasted | Each repeat gets a new composition or entrance; same words, new picture |

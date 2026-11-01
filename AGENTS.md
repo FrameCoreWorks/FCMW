@@ -7,8 +7,9 @@ FCWM is an open motion graphics toolkit. An agent writes a film as code (2D, 3D 
 user's machine or GitHub Actions renders it. No AI model runs at render time: the computer replays the
 code frame by frame, so the quality of the film is the quality of the code the agent writes.
 
-> Status: 0.3.0. HyperFrames (with Lottie and animated SVG), motion-reel, Manim and Blender render end to
-> end through `scripts/fcwm.mjs` (path-traced 3-D is experimental), also from a one-line installer (`scripts/install.sh`,
+> Status: 0.3.0. HyperFrames (with three.js 3-D, synthesized scores, Lottie and animated SVG), Manim and
+> Blender render end to end through `scripts/fcwm.mjs` (the vendored motion-reel toolkit, path tracing
+> included, is used only on request), also from a one-line installer (`scripts/install.sh`,
 > `scripts/install.ps1`); optional brand kits through `fcwm brand`. Check a directory's `README.md`
 > before relying on it, and never claim a feature works until it has been run.
 
