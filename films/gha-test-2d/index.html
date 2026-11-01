@@ -1,0 +1,67 @@
+<!doctype html>
+<!-- FCWM starter for the HyperFrames engine. The film is a pure function of time: renderAt(t) builds
+     the frame from t alone, driven by HyperFrames' hf-seek event. No GSAP, no timers, no CSS
+     transitions. Colours and the typeface are neutral placeholders: replace them with the film's own. -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <style>
+      :root {
+        --ground: #111111;
+        --ink: #f2f2f2;
+        --accent: #8a8a8a;
+        --font-display: system-ui, sans-serif;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--ground); }
+      #root { position: relative; width: 100%; height: 100%; font-family: var(--font-display); color: var(--ink); }
+      #title { position: absolute; left: 8%; right: 8%; top: 42%; font-size: 140px; font-weight: 700;
+               letter-spacing: -0.03em; line-height: 1; white-space: nowrap; }
+      #title .slot { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: 0.12em; }
+      #title .g { display: inline-block; will-change: transform; }
+      #rule { position: absolute; left: 8%; top: calc(42% + 140px * 1.45); height: 6px; background: var(--accent);
+              transform-origin: left center; width: 84%; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="4"
+         data-width="1080" data-height="1920" data-fps="30" data-no-timeline>
+      <h1 id="title" aria-label="Your title"></h1>
+      <div id="rule"></div>
+    </div>
+    <script type="module">
+      import { ease, prog } from './lib/fcwm/core.js';
+      import { rise } from './lib/fcwm/type.js';
+
+      const TEXT = 'Your title';
+      const title = document.getElementById('title');
+      const rule = document.getElementById('rule');
+      // Build the glyph spans once; every frame only sets their transforms from t.
+      const glyphs = [...TEXT].map((ch) => {
+        const slot = document.createElement('span');
+        slot.className = 'slot';
+        slot.dataset.layoutAllowOverflow = '';  // the slot clips on purpose: letters rise out of it
+        const g = document.createElement('span');
+        g.className = 'g';
+        g.textContent = ch === ' ' ? ' ' : ch;
+        slot.appendChild(g);
+        title.appendChild(slot);
+        return g;
+      });
+
+      function renderAt(t) {
+        const size = parseFloat(getComputedStyle(title).fontSize);
+        rise(t + 0.5, TEXT, { delay: 0.1 }).forEach((s, i) => {
+          glyphs[i].style.transform = `translateY(${(s.dy * size).toFixed(2)}px)`;
+          glyphs[i].style.visibility = s.visible ? 'visible' : 'hidden';
+        });
+        // The rule is already on screen at frame 0 (no empty first frame; the first letters are already rising at t = 0) and draws on to full width.
+        rule.style.transform = `scaleX(${(0.25 + 0.75 * ease.outCubic(prog(t, 0, 1.2))).toFixed(4)})`;
+      }
+
+      window.addEventListener('hf-seek', (e) => renderAt(e.detail.time));
+      renderAt(0);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "title": "gha-test-3d",
+  "duration": 4,
+  "formats": [
+    "16x9"
+  ],
+  "poster": 3.48,
+  "engine": "motion-reel",
+  "fcwm": "0.3.0"
+}
