@@ -26,7 +26,7 @@ jobs:
           node-version: 22
           cache: npm
       - uses: astral-sh/setup-uv@v6
-      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg libpango1.0-dev libcairo2-dev pkg-config
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: node scripts/fcwm.mjs doctor

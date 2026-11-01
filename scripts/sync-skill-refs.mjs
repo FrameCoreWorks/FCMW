@@ -26,6 +26,7 @@ export const MAP = {
     ['knowledge/lessons.md', 'lessons.md'], ['knowledge/checklist.md', 'checklist.md'], ['knowledge/critique.md', 'critique.md'],
     ['AGENTS.md#render-contract', 'render-contract.md']],
   'skills/fcwm-motion-reel/references': [...engineRefs('engines/motion-reel/references'), ['AGENTS.md#render-contract', 'render-contract.md']],
+  'skills/fcwm-manim/references': [['engines/manim/README.md', 'adapter.md'], ['AGENTS.md#render-contract', 'render-contract.md']],
   'skills/fcwm-hyperframes/references': [['engines/hyperframes/README.md', 'adapter.md'], ['AGENTS.md#render-contract', 'render-contract.md']],
 };
 

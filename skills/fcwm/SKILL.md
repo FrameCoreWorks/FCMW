@@ -38,7 +38,7 @@ Ask only for what is missing, in one round:
 | The idea in one sentence | none, always ask |
 | Duration | 15 s |
 | Aspect ratios | 9:16; every extra ratio gets its own composition, not a crop |
-| Output formats | MP4 (H.264); on request GIF, WebM, ProRes (`--export gif,webm,mov`); transparent overlays as ProRes 4444 or WebM with alpha (`mov-alpha`, `webm-alpha`, HyperFrames films started with `--alpha`) |
+| Output formats | MP4 (H.264); on request GIF, WebM, ProRes (`--export gif,webm,mov`); transparent overlays as ProRes 4444 or WebM with alpha (`mov-alpha`, `webm-alpha`, HyperFrames or Manim films started with `--alpha`) |
 | Look and tone | ask; never invent one |
 | Brand kit | none; use `brand-kit/` only if the user has saved one or provides assets |
 | Sound | the user's own track, a synthesized score and effects on the beat grid, or silent |
@@ -54,7 +54,8 @@ tell the user the engine and its tier; for anything other than `free`, add the l
 | --- | --- | --- |
 | 2-D type, UI and product stories, captions, layouts, slides, web-style motion (default) | HyperFrames | free (GSAP inside a film: restricted) |
 | 3-D scenes, point clouds, voxel characters, generative motion, synthesized score, music and lyric videos | motion-reel | free |
-| Equations and technical diagrams, physical simulation, Lottie or animated SVG | Manim, Blender, Lottie (planned) | say they are not available yet; offer the closest engine above |
+| Equations, graphs, plots, geometry, algorithms, technical explainers | Manim | free |
+| Physical simulation, photoreal 3-D scenes, Lottie or animated SVG | Blender, Lottie (planned) | say they are not available yet; offer the closest engine above |
 
 **3-D quality mode.** For a 3-D shot about materials and light (glass, metal, liquid, a product on a
 table, soft shadows, depth of field), offer path tracing on motion-reel next to the default rasteriser,
@@ -66,6 +67,7 @@ When a job fits both (for example 2-D kinetic type with a synthesized score), of
 each and recommend one. Then load the engine skill and follow it:
 
 - HyperFrames: `fcwm new <film>` and `skills/fcwm-hyperframes/SKILL.md`
+- Manim: `fcwm new <film> --engine manim` and `skills/fcwm-manim/SKILL.md`
 - motion-reel: `fcwm new <film> --engine motion-reel` (`--3d` for three.js, `--pathtrace` for the path-traced mode) and `skills/fcwm-motion-reel/SKILL.md`
 
 ## Paid APIs and MCP servers

@@ -52,9 +52,12 @@
       "tier": "free",
       "license": "MIT",
       "upstream": "https://github.com/ManimCommunity/manim",
-      "requirements": "Python 3.10+, cairo, pango, FFmpeg; LaTeX for typeset maths.",
-      "status": "planned",
-      "checked": "2026-11-01"
+      "requirements": "uv (fetches Manim 0.22.1 and Python 3.12 on first use), FFmpeg. Linux also needs Pango and Cairo headers (libpango1.0-dev, libcairo2-dev). LaTeX only for MathTex.",
+      "status": "experimental",
+      "checked": "2026-11-01",
+      "version": "0.22.1",
+      "stars": 42095,
+      "notes": "Run through uv at a pinned version, not vendored. Text via Pango needs no LaTeX. Transparent output: ProRes 4444 or WebM with alpha."
     },
     {
       "id": "blender",

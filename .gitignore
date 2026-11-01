@@ -14,3 +14,4 @@ out/
 .fcwm/
 .env.local
 .env.*.local
+.manim/
