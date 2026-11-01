@@ -83,7 +83,9 @@ sandbox from files you read through the GitHub connector, prove every file is ex
    the original. Write a long file in several cells that append in order. Never retype a file from
    memory or fix it by eye.
 5. **Write `/mnt/data/expect.json`** as `{ "<path>": "<sha256>" }` for every file you wrote, copied
-   from the inventory.
+   from the inventory, and `/mnt/data/fcwm/fcwm-source.json` as
+   `{ "repository": "https://github.com/FrameCoreWorks/FCWM", "commit": "<pinned SHA>", "version": "<inventory version>" }`.
+   The next update reads it to know what is installed.
 6. **Check and pack in one cell.** Run this cell unchanged. It packs only when every hash matches;
    read each file on the `BAD` list again from the pinned commit and rerun the cell.
 
@@ -93,16 +95,19 @@ sandbox from files you read through the GitHub connector, prove every file is ex
    bad=[p for p,h in E.items() if not (R/p).is_file() or hashlib.sha256((R/p).read_bytes()).hexdigest()!=h]
    print('BAD',bad) if bad else print('OK',len(E))
    if not bad:
-       with zipfile.ZipFile('/mnt/data/fcwm.zip','w',zipfile.ZIP_DEFLATED) as z:[z.write(R/p,p) for p in sorted(E)]
+       with zipfile.ZipFile('/mnt/data/fcwm.zip','w',zipfile.ZIP_DEFLATED) as z:[z.write(R/p,p) for p in sorted(E)];z.write(R/'fcwm-source.json','fcwm-source.json')
    ```
 
 7. **Save.**
    - First install: `create_plugin(archive="/mnt/data/fcwm.zip")`.
    - Update: `update_plugin` on the existing plugin with the ZIP. An update lays the files you send
      over the saved plugin and keeps the rest, so the ZIP needs only files whose hash changed, and the
-     user's own additions stay. Files to delete: paths in the inventory of the installed version
-     (tag `v<installed version>`) that are missing from the new one. When that tag does not exist,
-     the baseline is unknown: delete nothing and say so.
+     user's own additions stay. Files to delete: paths in `plugin-files.json` at the installed commit
+     (`commit` in the saved `fcwm-source.json`) that are missing from the new inventory. Without that
+     file (installs made before it existed), try the tag `v<version>` of the repository version; when
+     neither exists the baseline is unknown: delete nothing and say so.
+   - The version ChatGPT shows can be higher than the repository's (it raises the patch number on each
+     save). Report both; `fcwm-source.json` holds the repository version and commit.
 8. **Read it back.** Read the saved plugin (name, version, file list) and report three things
    separately: saved (yes or no), files match the inventory (how many, how many skipped), works in a
    new chat (ask the user to open one and type `@fcwm`).
@@ -112,4 +117,5 @@ environment check to run in Work, because rendering happens on the user's comput
 (`skills/fcwm/references/handoff.md`).
 
 For maintainers: `node scripts/inventory.mjs` regenerates `plugin-files.json`; `npm run validate`
-fails when it is out of date. Tag each release `v<version>` so updates have a baseline.
+fails when it is out of date. Updates find their baseline in `fcwm-source.json`; release tags
+`v<version>` are a fallback for installs made without it.

@@ -1,5 +1,9 @@
 # FCWM in ChatGPT (Work, Business, Enterprise, Edu)
 
+> **Agents installing FCWM: follow [INSTALL.md](../INSTALL.md), section "ChatGPT Work: install and
+> update without a ZIP".** This page is for people; the admin import and ZIP upload below are only for
+> workspace admins who ask for them.
+
 ChatGPT runs FCWM's skills; it does not render. It writes a self-contained film folder (or a zip of it)
 and gives you one line to paste on your computer, or sets up a render in GitHub Actions on your own
 GitHub account. Plugins and skills are available on ChatGPT Business, Enterprise, Healthcare and Edu,
