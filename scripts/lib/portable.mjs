@@ -20,10 +20,17 @@ export const FFMPEG_MAC = {
 // FFmpeg for Windows without winget: BtbN's GPL builds on GitHub (rolling), with a checksum list.
 export const FFMPEG_WIN = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest';
 
+// uv: astral's release archives on GitHub, each with a .sha256 next to it.
+const UV_TARGET = {
+  'darwin-arm64': 'aarch64-apple-darwin', 'darwin-x64': 'x86_64-apple-darwin',
+  'win32-x64': 'x86_64-pc-windows-msvc', 'win32-arm64': 'aarch64-pc-windows-msvc',
+};
+
 // What can be installed this way here, or null.
 export function portableFor(name, { platform = process.platform, arch = process.arch } = {}) {
   if (name === 'ffmpeg' && platform === 'darwin' && FFMPEG_MAC[arch]) return { label: 'FFmpeg 9.0 (per-user, no Homebrew)', size: '~80 MB' };
   if (name === 'ffmpeg' && platform === 'win32' && ['arm64', 'x64'].includes(arch)) return { label: 'FFmpeg (per-user, no winget)', size: '~200 MB' };
+  if (name === 'uv' && UV_TARGET[`${platform}-${arch}`]) return { label: 'uv (per-user)', size: '~40 MB' };
   if (name === 'gh' && (platform === 'darwin' || platform === 'linux') && ['arm64', 'x64'].includes(arch)) return { label: 'GitHub CLI (per-user)', size: '~40 MB' };
   return null;
 }
@@ -102,6 +109,22 @@ export async function installPortable(name, { home, log = console.log, arch = pr
         out.push(place(exe, bin, tool));
       }
       return out;
+    }
+    if (name === 'uv') {
+      const target = UV_TARGET[`${platform}-${arch}`];
+      const file = `uv-${target}.${platform === 'win32' ? 'zip' : 'tar.gz'}`;
+      const base = 'https://github.com/astral-sh/uv/releases/latest/download';
+      log(`downloading ${file} from github.com/astral-sh/uv`);
+      const archive = path.join(tmp, file);
+      await download(`${base}/${file}`, archive);
+      verify(archive, (await text(`${base}/${file}.sha256`)).trim().split(/\s+/)[0]);
+      unpack(archive, path.join(tmp, 'uv'));
+      const exe = platform === 'win32' ? '.exe' : '';
+      return ['uv', 'uvx'].map((b) => {
+        const src = find(path.join(tmp, 'uv'), b + exe);
+        if (!src) throw new Error(`${b + exe} not found in the download`);
+        return place(src, bin, b + exe);
+      });
     }
     if (name === 'gh') {
       // the latest-release page redirects to .../tag/v<version> (no API call, so no rate limit)

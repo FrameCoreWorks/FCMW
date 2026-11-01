@@ -94,6 +94,10 @@ export function installPlan(name, { platform = process.platform, repo, hasBin = 
     return { ...npx, args: ['playwright', 'install', ...(platform === 'linux' ? ['--with-deps'] : []), 'chromium'], label: 'Chromium for Playwright' };
   }
   if (name === 'hyperframes') return { ...npx, args: ['-y', `hyperframes@${HYPERFRAMES_VERSION}`, 'browser', 'ensure'], env: HYPERFRAMES_ENV, label: `HyperFrames ${HYPERFRAMES_VERSION} and its Chrome` };
+  // Manim's pycairo builds against Cairo, which a Mac gets only from Homebrew
+  if (name === 'manim' && platform === 'darwin' && !hasBin('brew') && !hasBin('pkg-config')) {
+    return { manual: 'Manim needs Cairo and Pango, which a Mac gets from Homebrew: install Homebrew (https://brew.sh), run "brew install cairo pango pkg-config", then run the same command again. Every other engine works without it.' };
+  }
   if (name in pyEngine) return { cmd: 'uv', args: uvArgs(name, false), label: `${pyEngine[name][1]} into uv's cache` };
   const pkgs = {
     ffmpeg: { brew: 'ffmpeg', winget: 'Gyan.FFmpeg', apt: 'ffmpeg', dnf: 'ffmpeg', pacman: 'ffmpeg' },
@@ -108,7 +112,6 @@ export function installPlan(name, { platform = process.platform, repo, hasBin = 
     // No Homebrew (most Macs): per-user installs that need no administrator password
     const port = portableFor(name, { platform });
     if (port) return { portable: name, label: port.label, size: port.size };
-    if (name === 'uv') return { cmd: 'sh', args: ['-c', 'curl -LsSf https://astral.sh/uv/install.sh | sh'], label: 'uv (per-user)', addPath: path.join(os.homedir(), '.local', 'bin') };
     if (name === 'git') return { cmd: 'xcode-select', args: ['--install'], label: "Apple's Command Line Tools (git)", after: "A macOS window asks to install the Command Line Tools: click Install, wait until it finishes, then run the same command again." };
     return { manual: `install ${name} (or Homebrew from https://brew.sh), then run the same command again` };
   }
@@ -119,7 +122,6 @@ export function installPlan(name, { platform = process.platform, repo, hasBin = 
     if (hasBin('choco') && pkgs.choco !== false) return { cmd: 'choco', args: ['install', pkgs.choco || name, '-y', '--no-progress'], label: name };
     const port = portableFor(name, { platform });
     if (port) return { portable: name, label: port.label, size: port.size };
-    if (name === 'uv') return { cmd: 'powershell', args: ['-ExecutionPolicy', 'ByPass', '-NoProfile', '-Command', 'irm https://astral.sh/uv/install.ps1 | iex'], label: 'uv (per-user)', addPath: path.join(os.homedir(), '.local', 'bin') };
     return { manual: `winget is missing (App Installer from the Microsoft Store). Install ${name} by hand and run the same command again.` };
   }
   if (name === 'uv') return { cmd: 'sh', args: ['-c', 'curl -LsSf https://astral.sh/uv/install.sh | sh'], label: 'uv', addPath: path.join(os.homedir(), '.local', 'bin') };

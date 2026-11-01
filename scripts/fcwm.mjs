@@ -333,7 +333,13 @@ async function runFolder(target, a, cwd, log) {
     const need = [...new Set([...(a.full ? FULL : []), ...films.flatMap(requirementsFor)])];
     log(`FCWM ${VERSION}: checking the ${a.full ? 'full render toolkit' : 'tools'} for ${films.map((f) => f.slug).join(', ')}`);
     const r = await ensure(need, { repo: REPO, version: VERSION, log, dryRun: a['dry-run'] });
-    if (!a['dry-run'] && !r.ok) throw new UserError(`still missing: ${r.missing.join(', ')}. ${r.manual.join(' ')}`, 2);
+    // Only what these films need blocks the render; an engine for later that failed to install is a note.
+    const needed = new Set(films.flatMap(requirementsFor));
+    const blocking = r.missing.filter((n) => needed.has(n));
+    const later = r.missing.filter((n) => !needed.has(n));
+    const why = (names) => r.manual.filter((m) => names.some((n) => m.startsWith(`${n}:`))).join(' ');
+    if (!a['dry-run'] && blocking.length) throw new UserError(`still missing: ${blocking.join(', ')}. ${why(blocking)}`, 2);
+    if (!a['dry-run'] && later.length) log(`note: not installed yet (only needed for other engines, this film renders without them): ${later.join(', ')}. ${why(later)}`);
     if (!a['dry-run']) log(`installed tools are recorded in ${statePath()}; the next render skips them.`);
     let code = 0;
     for (const film of films) code = Math.max(code, await render(film.dir, a, cwd, log));

@@ -56,12 +56,14 @@ test('installPlan: the package manager of each OS, or a manual step', () => {
   // a Mac without Homebrew: per-user installs, no administrator password
   assert.equal(installPlan('ffmpeg', { platform: 'darwin', hasBin: no }).portable, 'ffmpeg');
   assert.equal(installPlan('gh', { platform: 'darwin', hasBin: no }).portable, 'gh');
-  assert.match(installPlan('uv', { platform: 'darwin', hasBin: no }).args[1], /astral\.sh\/uv\/install\.sh/);
+  assert.equal(installPlan('uv', { platform: 'darwin', hasBin: no }).portable, 'uv');
+  assert.match(installPlan('manim', { platform: 'darwin', hasBin: no }).manual, /Homebrew/);
+  assert.deepEqual(installPlan('manim', { platform: 'darwin', hasBin: yes }).cmd, 'uv');
   assert.deepEqual(installPlan('git', { platform: 'darwin', hasBin: no }).args, ['--install']);
   assert.match(installPlan('pango', { platform: 'darwin', hasBin: no }).manual, /brew\.sh/);
   // Windows without winget, Scoop or Chocolatey
   assert.equal(installPlan('ffmpeg', { platform: 'win32', hasBin: no }).portable, 'ffmpeg');
-  assert.match(installPlan('uv', { platform: 'win32', hasBin: no }).args.at(-1), /install\.ps1/);
+  assert.equal(installPlan('uv', { platform: 'win32', hasBin: no }).portable, 'uv');
   assert.deepEqual(installPlan('ffmpeg', { platform: 'win32', hasBin: yes }).args.slice(0, 3), ['install', '--id', 'Gyan.FFmpeg']);
   assert.match(installPlan('gh', { platform: 'linux', hasBin: (b) => b === 'apt-get' || b === 'sudo' }).args[1], /apt-get install -y --no-install-recommends gh$/);
   assert.equal(installPlan('gh', { platform: 'linux', hasBin: (b) => b === 'apt-get' }).portable, 'gh');  // no sudo: per user

@@ -5,9 +5,12 @@
 - Computers with nothing installed: the one-line installer puts the official Node.js 22 (nodejs.org,
   SHA-256 checked) into `~/.fcwm/node` on macOS and Linux instead of requiring Homebrew, and adds
   `~/.fcwm/bin` to the shell profile. On a Mac without Homebrew, FFmpeg 9.0 (Martin Riedl's signed
-  builds, GPL), uv (astral's installer) and the GitHub CLI install per user, and git through Apple's
-  Command Line Tools. On Windows without winget: Node.js from the official zip, FFmpeg from BtbN's
-  builds, uv from astral's installer; after winget, Node.js is found without a new window. No
+  builds, GPL), uv (astral's release archive) and the GitHub CLI install per user, and git through
+  Apple's Command Line Tools; Manim says plainly that it needs Homebrew's Cairo. On Windows without
+  winget: Node.js from the official zip, FFmpeg from BtbN's builds, uv from astral's release archive;
+  after winget, Node.js is found without a new window.
+- The first run (`run --full`) no longer stops a film because an engine it does not use failed to
+  install: that engine is reported as a note and the film renders. No
   administrator password anywhere. CI covers a bare macOS and a bare Windows (`mac-fresh`,
   `windows-fresh`).
 - `fcwm uninstall [--yes] [--all]`: removes `~/.fcwm` and the PATH line, keeps brand kits unless
