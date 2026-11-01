@@ -4,7 +4,7 @@ description: Entry point for making motion graphics as code with FCWM. Use whene
 license: Apache-2.0
 compatibility: Any agent that reads Agent Skills. Rendering needs the full FCWM repository (git clone), a shell with Node 22+ and FFmpeg; `node scripts/fcwm.mjs doctor` lists anything missing. Agents without a shell hand the user a command to run.
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # FCWM
@@ -86,6 +86,16 @@ key in chat, and follow `<repo>/skills/connecting-services`.
 5. Deliver: full paths of the files in `<film>/render/`, the last scores, and what was not checked
    (for example the safe zone, which is still a manual check).
 
-Without a shell, finish with the exact commands the user should paste, starting with
-`git clone https://github.com/FrameCoreWorks/FCWM && cd FCWM && npm install && npx playwright install chromium`.
-Rendering in the cloud instead: `<repo>/docs/render-in-github-actions.md`.
+## 5. When the user renders (no shell here, or the user's own computer)
+
+Follow `references/handoff.md` step by step:
+
+1. Write every file into one self-contained film folder and tell the user how to put it on their disk.
+2. Ask for the folder's full path on their disk or volume (spaces, `&` and accents are fine).
+3. Give one command for their OS: the first-time line installs only what is missing (Node.js, FFmpeg,
+   engines), then renders into `<folder>/render/`; later the short `fcwm run` line. `fcwm command
+   <folder> --os macos|windows|linux [--next] [--cloud]` prints the exact line.
+4. Tell the user that FCWM tracks what is installed (`~/.fcwm/state.json`, re-checked on every run), so
+   later commands contain no installation.
+5. Offer GitHub Actions (`--cloud`) as the alternative: it runs on the user's own GitHub account and
+   minutes.

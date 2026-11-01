@@ -4,7 +4,7 @@ description: Build an FCWM film on the motion-reel engine (canvas film as a pure
 license: Apache-2.0 (engine code MIT, Aries Spring)
 compatibility: Needs the full FCWM repository (git clone), Node 22+, FFmpeg, Playwright with Chromium (npm install && npx playwright install chromium in the FCWM folder) and uv for Python audio scripts. A GPU is strongly recommended for 3-D.
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # FCWM on motion-reel

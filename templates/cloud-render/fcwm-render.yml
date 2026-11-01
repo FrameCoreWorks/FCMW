@@ -1,0 +1,63 @@
+name: fcwm-render
+
+# Renders a film folder of this repository with FCWM on GitHub's machines, on the account that owns
+# this repository. Actions tab > fcwm-render > Run workflow, enter the film folder (for example
+# films/my-film). The finished files are attached to the run as the artifact "<film>-render".
+# `fcwm run <folder> --cloud` writes this file, pushes the film, starts the run and downloads the result.
+on:
+  workflow_dispatch:
+    inputs:
+      film:
+        description: Film folder, relative to the repository root
+        required: true
+      mode:
+        description: full (video, mix, preview, QA) or check (contact sheets only)
+        type: choice
+        options: [full, check]
+        default: full
+      fcwm_ref:
+        description: FCWM version (branch or tag of FrameCoreWorks/FCWM)
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: project
+      - uses: actions/checkout@v4
+        with:
+          repository: FrameCoreWorks/FCWM
+          ref: ${{ inputs.fcwm_ref }}
+          path: fcwm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: astral-sh/setup-uv@v6
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: npm ci --no-audit --no-fund
+        working-directory: fcwm
+      - run: npx playwright install --with-deps chromium
+        working-directory: fcwm
+      - name: Render
+        env:
+          FILM: project/${{ inputs.film }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$MODE" = "check" ]; then node fcwm/scripts/fcwm.mjs render "$FILM" --check; else node fcwm/scripts/fcwm.mjs render "$FILM"; fi
+      - name: Artifact name
+        id: name
+        env:
+          FILM: ${{ inputs.film }}
+        run: echo "name=$(basename "$FILM")" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ steps.name.outputs.name }}-render
+          path: project/${{ inputs.film }}/render/
+          if-no-files-found: warn

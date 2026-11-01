@@ -8,9 +8,9 @@ Claude apps, Codex, ChatGPT, Cursor, Gemini CLI and others. It brings no brand a
 You set the direction; FCWM brings the workshop: engines, a production method, quality control and
 rendering.
 
-> **Status: 0.2.0.** Two engines render end to end: HyperFrames (2-D, the default) and motion-reel
+> **Status: 0.3.0.** Two engines render end to end: HyperFrames (2-D, the default) and motion-reel
 > (3-D, generative, synthesized sound), driven by one cross-platform command with automated quality
-> checks. Both engines are marked experimental. Manim, Blender, Lottie, extra export formats and the
+> checks, and a one-line installer that renders a film folder on any computer. Both engines are marked experimental. Manim, Blender, Lottie, extra export formats and the
 > brand kit come next.
 
 ## Why code
@@ -90,7 +90,9 @@ node <path-to-FCWM>/scripts/fcwm.mjs render my-film --check   # contact sheets i
 node <path-to-FCWM>/scripts/fcwm.mjs render my-film           # MP4, phone preview, QA report
 ```
 
-No GPU or a phone only: [render in GitHub Actions](docs/render-in-github-actions.md).
+Your agent has no terminal? It hands you one film folder and one line to paste, which installs only
+what is missing and renders into that folder: [render on your computer](docs/render-on-your-computer.md).
+No GPU or a phone only: [render in GitHub Actions](docs/render-in-github-actions.md) on your own GitHub account.
 
 ## Repository layout
 

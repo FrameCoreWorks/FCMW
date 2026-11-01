@@ -5,11 +5,12 @@ arguments as arrays, so paths with spaces or `&` work.
 
 | Script | Purpose |
 | --- | --- |
-| `fcwm.mjs` | The CLI: `new`, `render` (`--check`, `--at`, full), `qa` (`--determinism`), `doctor`, `engines`. Every command takes `--dry-run`. Exit codes: 0 ok, 1 failed, 2 missing tool. |
+| `fcwm.mjs` | The CLI: `new`, `render` (`--check`, `--at`, full), `qa` (`--determinism`), `run` (install what is missing, then render; `--cloud` for GitHub Actions), `setup`, `command`, `doctor`, `engines`. Every command takes `--dry-run`. Exit codes: 0 ok, 1 failed, 2 missing tool. |
+| `install.sh`, `install.ps1` | One-line installers (macOS/Linux, Windows): Node.js and FCWM into `~/.fcwm/app` when missing or outdated, then `fcwm run`. `FCWM_HOME`, `FCWM_REF`, `FCWM_SRC` (install from a local folder). |
 | `smoke.mjs` | End-to-end test: one short film per engine, created, rendered and checked. |
 | `sync-skill-refs.mjs` | Copies `knowledge/`, engine references and the render contract into each skill's `references/` (`--check` reports drift; `validate` runs it). |
 | `validate.mjs` | Skills against the Agent Skills spec, manifest versions, the engine catalog, the no-brand rule, reference drift. `npm run validate`. |
-| `lib/` | `args`, `proc` (cross-platform spawn), `tools` (find ffmpeg/uv and install hints), `film` (read `film.json`), `pipeline` (run adapter steps), `contact` (contact sheets). |
+| `lib/` | `args`, `proc` (cross-platform spawn), `tools` (find ffmpeg/uv and install hints), `film` (read `film.json`), `pipeline` (run adapter steps), `contact` (contact sheets), `setup` (detect, install only what is missing, state file), `handoff` (the command to paste), `cloud` (GitHub Actions render on the user's account). |
 | `test/` | `node:test` suites, run with `npm test`. |
 
 On Windows, cmd.exe expands `%NAME%` even inside quotes, so avoid `%` in film folder names.

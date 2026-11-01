@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0 (unreleased)
+
+- Render hand-off for any agent: one self-contained film folder, its path, one command.
+  `scripts/install.sh` (macOS, Linux) and `scripts/install.ps1` (Windows) install Node.js and FCWM only
+  when missing, then `fcwm run <folder>` installs only the tools the film lacks and renders into
+  `<folder>/render/`. Every run re-detects tools and records them in `~/.fcwm/state.json`; the run
+  prints the short command for next time.
+- `fcwm run`, `fcwm setup`, `fcwm command` (the exact line per OS, quoted for any path).
+- `fcwm run --cloud`: renders in GitHub Actions on the user's own account (private `fcwm-renders`
+  repository via the GitHub CLI) and downloads the result into the same folder. Workflow template
+  `templates/cloud-render/fcwm-render.yml`; by-hand browser steps in `docs/render-in-github-actions.md`.
+- motion-reel writes its intermediate files to `<film>/.fcwm/out` (`MOTION_REEL_OUT`), so nothing lands
+  outside the film folder. Films record the FCWM version in `film.json` (`fcwm`).
+- Skill reference `skills/fcwm/references/handoff.md`; docs `render-on-your-computer.md`.
+- Workflow `install`: the installers on Linux, macOS and Windows in a path with a space, `&` and `'`.
+
 ## 0.2.0 (unreleased)
 
 - `scripts/fcwm.mjs`: cross-platform CLI (`new`, `render --check/--at`, full render with mix and phone

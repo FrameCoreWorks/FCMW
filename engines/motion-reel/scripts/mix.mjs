@@ -18,7 +18,7 @@ if (!film || film.startsWith('--')) { console.error('usage: mix.mjs <film> [--mu
 const num = (n, d) => { const i = args.indexOf(`--${n}`); return i >= 0 ? Number(args[i + 1]) : d; };
 const ROOT = process.cwd();
 const A = path.join(ROOT, film, 'audio');
-const OUT = path.join(ROOT, 'out', film);
+const OUT = path.join(process.env.MOTION_REEL_OUT || path.join(ROOT, 'out'), film);
 const cfgPath = path.join(ROOT, film, 'film.json');
 const cfg = fs.existsSync(cfgPath) ? JSON.parse(fs.readFileSync(cfgPath, 'utf8')) : {};
 const DUR = Number(cfg.duration || 15);

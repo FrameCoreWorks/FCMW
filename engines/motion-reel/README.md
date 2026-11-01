@@ -1,8 +1,10 @@
 # motion-reel engine
 
 [motion-reel](https://github.com/Aries-Spring/motion-reel) 1.3.0 by Aries Spring, MIT licence (`LICENSE`).
-Vendored so FCWM works without any other plugin. Upstream files are unchanged; FCWM adds `adapter.mjs`
-(the steps `scripts/fcwm.mjs` runs for each mode) and this README.
+Vendored so FCWM works without any other plugin. FCWM adds `adapter.mjs` (the steps
+`scripts/fcwm.mjs` runs for each mode) and this README, and changes one line in `render.mjs`, `mix.mjs`
+and `sfx.mjs`: the intermediate folder (default `out/`) can be moved with `MOTION_REEL_OUT`, which FCWM
+sets to `<film>/.fcwm/out` so a render writes only inside the film folder.
 
 | Folder | Contents |
 | --- | --- |

@@ -4,7 +4,7 @@ description: Build an FCWM film on the HyperFrames engine (HTML and CSS composit
 license: Apache-2.0
 compatibility: Needs the full FCWM repository (git clone), Node 22+ and FFmpeg. HyperFrames itself runs through npx at a pinned version and downloads its own Chrome on first use; no account is needed.
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # FCWM on HyperFrames

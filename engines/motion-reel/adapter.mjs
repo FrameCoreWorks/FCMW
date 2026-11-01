@@ -1,6 +1,7 @@
 // FCWM adapter for motion-reel: describes the steps of each render mode; scripts/fcwm.mjs runs them.
 // A film is <root>/<slug>/ (index.html, film.js, film.json, beats.json). The engine scripts run with
-// cwd = <root> and write intermediate files to <root>/out/<slug>/; delivery lands in <slug>/render/.
+// cwd = <root>; intermediate files go to <slug>/.fcwm/out/<slug>/ (MOTION_REEL_OUT), so everything a
+// render writes stays inside the film folder. Delivery lands in <slug>/render/.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -48,13 +49,15 @@ export default {
   plan(film, mode, { at = '', formats } = {}) {
     const { root, slug, dir } = film;
     const fmts = formats || film.formats;
-    const render = (...extra) => ({ cmd: process.execPath, args: [script('render.mjs'), '--film', slug, '--fps', String(film.fps), ...extra], cwd: root });
-    const out = path.join(root, 'out', slug);
+    const outRoot = path.join(dir, '.fcwm', 'out');
+    const env = { MOTION_REEL_OUT: outRoot };
+    const render = (...extra) => ({ cmd: process.execPath, args: [script('render.mjs'), '--film', slug, '--fps', String(film.fps), ...extra], cwd: root, env });
+    const out = path.join(outRoot, slug);
     const steps = [];
 
     if (mode !== 'at' && fs.existsSync(path.join(dir, 'audio', 'score.py'))) {
       steps.push({ label: 'score: audio/score.py', cmd: 'uv', args: ['run', '--quiet', path.join(slug, 'audio', 'score.py')],
-        cwd: root, env: { MOTION_REEL_SKILL: ENGINE_DIR } });
+        cwd: root, env: { ...env, MOTION_REEL_SKILL: ENGINE_DIR } });
     }
     if (mode === 'check') {
       steps.push({ label: 'clear old contact sheets', fn: () => clearSheets(film.renderDir) });
@@ -80,9 +83,9 @@ export default {
       if (fs.existsSync(out)) for (const n of fs.readdirSync(out)) if (/^(final|video)(_.+)?\.mp4$/.test(n)) fs.rmSync(path.join(out, n));
     } });
     for (const f of fmts) steps.push({ label: `picture ${f}`, ...render('--video-only', '--format', f) });
-    steps.push({ label: 'sound effects from HITS', cmd: process.execPath, args: [script('sfx.mjs'), slug], cwd: root,
+    steps.push({ label: 'sound effects from HITS', cmd: process.execPath, args: [script('sfx.mjs'), slug], cwd: root, env,
       when: () => /\bHITS\b/.test(fs.readFileSync(path.join(dir, 'film.js'), 'utf8')) });
-    steps.push({ label: 'mix -14 LUFS / -1 dBTP and mux', cmd: process.execPath, args: [script('mix.mjs'), slug], cwd: root,
+    steps.push({ label: 'mix -14 LUFS / -1 dBTP and mux', cmd: process.execPath, args: [script('mix.mjs'), slug], cwd: root, env,
       when: () => (mixed = ['music.wav', 'sfx.wav', 'vo.wav'].some((w) => fs.existsSync(path.join(dir, 'audio', w)))) });
     steps.push({ label: 'deliver', fn: () => {
       fs.mkdirSync(film.renderDir, { recursive: true });
