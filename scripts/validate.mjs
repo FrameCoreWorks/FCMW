@@ -110,7 +110,7 @@ if (gem?.contextFileName && !existsSync(join(root, gem.contextFileName)))
 
 // ---------- 3. engine catalog ----------
 const TIERS = new Set(["free", "restricted", "paid"]);
-const STATUSES = new Set(["planned", "experimental", "ready"]);
+const STATUSES = new Set(["planned", "experimental", "ready", "user-configured"]);
 const REQUIRED = ["id", "name", "purpose", "tier", "license", "status", "checked"];
 const catalog = readJSON("engines/catalog.json");
 if (catalog) {
@@ -123,7 +123,8 @@ if (catalog) {
     if (e.checked && !/^\d{4}-\d{2}-\d{2}$/.test(e.checked)) fail(where, `checked must be YYYY-MM-DD`);
     if (e.id && ids.has(e.id)) fail(where, "duplicate id");
     ids.add(e.id);
-    if (e.status === "ready" && !existsSync(join(root, "engines", e.id))) fail(where, `status is ready but engines/${e.id}/ does not exist`);
+    if ((e.status === "ready" || e.status === "experimental") && !existsSync(join(root, "engines", e.id))) fail(where, `status is ${e.status} but engines/${e.id}/ does not exist`);
+    if (e.status === "user-configured" && e.tier !== "paid") fail(where, "user-configured entries are paid APIs or MCP servers: tier must be paid");
   }
 }
 
