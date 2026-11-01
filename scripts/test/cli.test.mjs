@@ -359,3 +359,16 @@ test('brand kit: init, check, and --brand copies it into the film and links bran
     if (saved === undefined) delete process.env.FCWM_HOME; else process.env.FCWM_HOME = saved;
   }
 });
+
+test('hyperframes: a hand-off film that imports ./lib/fcwm/ without carrying it gets the lib at render time', async () => {
+  const hf = await loadAdapter('hyperframes');
+  const root = tmp();
+  hf.scaffoldSteps(root, 'ho', { duration: 3, formats: ['9x16'] })[0].fn();
+  fs.rmSync(path.join(root, 'ho', 'lib'), { recursive: true });
+  const [fill] = hf.plan(loadFilm('ho', root), 'check');
+  assert.match(fill.label, /lib\/fcwm/);
+  assert.equal(fill.when(), true);
+  fill.fn();
+  assert.ok(fs.existsSync(path.join(root, 'ho', 'lib', 'fcwm', 'blocks.js')));
+  assert.equal(fill.when(), false);
+});
