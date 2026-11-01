@@ -112,13 +112,15 @@ A chat app's code sandbox (ChatGPT, Claude.ai) counts as "no shell" for renderin
 start Chromium or install engines there, and never report a failed attempt. Ask the user's operating
 system; never assume one. Follow `references/handoff.md` step by step:
 
-1. Write every file into one self-contained film folder and tell the user how to put it on their disk.
-2. Ask for the folder's full path on their disk or volume (spaces, `&` and accents are fine).
-3. Give one command for their OS: the first-time line sets up the whole render toolkit (Node.js,
-   FFmpeg, every engine; only what is missing), then renders into `<folder>/render/`; later the short
-   `fcwm run` line. `fcwm command
-   <folder> --os macos|windows|linux [--next] [--cloud]` prints the exact line.
-4. Tell the user that FCWM tracks what is installed (`~/.fcwm/state.json`, re-checked on every run), so
-   later commands contain no installation.
-5. Offer GitHub Actions (`--cloud`) as the alternative: it runs on the user's own GitHub account and
-   minutes.
+1. Write every file into one self-contained film folder, deliver it as a ZIP and tell the user to
+   download and unzip it.
+2. Ask for their operating system (if unknown) and the folder's full path, with how to copy a path on
+   that system (spaces, `&` and accents are fine).
+3. Give two separate commands for their system (Terminal on macOS and Linux, PowerShell on Windows):
+   render on this computer, and render in GitHub Actions (` --cloud`). `fcwm command <folder> --os
+   macos|windows|linux [--next] [--cloud]` prints the exact lines. The first-time local line sets up the
+   whole render toolkit (Node.js, FFmpeg, every engine; only what is missing); later the short `fcwm run`
+   line.
+4. Say what happens on the first run (missing tools are installed), that the GitHub variant asks for a
+   GitHub login once and runs on the user's own account and Actions minutes (with the limits), and that
+   FCWM remembers what is installed (`~/.fcwm/state.json`), so later commands install nothing.

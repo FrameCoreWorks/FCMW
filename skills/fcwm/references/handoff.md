@@ -47,7 +47,7 @@ system (all three if you do not know it yet):
 Use the path exactly as given. Spaces, `&`, apostrophes and accented letters are fine: the command
 generator quotes them. Strip only the surrounding quotes Windows adds when copying.
 
-## 3. Give exactly one command
+## 3. Give two commands: local render and GitHub Actions
 
 Pick the user's OS (ask if unknown) and whether FCWM already ran on that computer (step 4). The line
 is produced by `fcwm command` (from `scripts/lib/handoff.mjs`); an agent without a shell builds it by
@@ -83,7 +83,12 @@ Quoting: wrap the path in single quotes. Inside the path, write a `'` as `'\''` 
 as `''` on Windows. Add ` --check` at the end for contact sheets only (the quality gate), or
 ` --cloud` to render in GitHub Actions instead (step 5).
 
-Give the command in its own code block, one command per block, and say what it does in two lines:
+Always give two separate commands, each in its own code block, labelled for the user's system
+(Terminal on macOS and Linux, PowerShell on Windows): **render on this computer** (the line above) and
+**render in GitHub Actions** (the same line with ` --cloud`, step 5). Under them, in a few lines: the
+first run installs whatever is missing; the GitHub variant needs a GitHub login in the browser the first
+time and uses the user's own Actions minutes (limits in step 5). For the local command, say what it does
+in two lines:
 "The first time it sets up the whole render toolkit (Node.js, FFmpeg and every FCWM engine), so any
 film renders later without another download, then renders into `<path>/render/`. The first run takes a
 while (about 1 GB, mostly Blender); later runs skip everything already installed."
@@ -118,9 +123,9 @@ How it works, so you answer questions correctly:
 - If a film needs a newer FCWM than the one installed, the short command says so; give the first-time
   command again (it updates FCWM).
 
-## 5. GitHub Actions instead (optional)
+## 5. GitHub Actions (the second command)
 
-Offer it when the user has no suitable computer, or the film is long and 3-D. Say first:
+Recommend it when the user has no suitable computer, or the film is long and 3-D. Say first:
 
 - It runs on the user's OWN GitHub account: FCWM creates a private repository `fcwm-renders` there,
   pushes the film's source, runs the render on GitHub's machines and downloads the result into

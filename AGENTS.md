@@ -58,7 +58,8 @@ sheet to the user instead of scoring it themselves. Automated checks: -14 LUFS i
 -1 dBTP, constant fps, text inside the platform safe zone, no blank frames, deterministic frames.
 
 An agent without a terminal (for example a chat app) hands the user one self-contained film folder,
-asks for its path and gives one command to paste: `skills/fcwm/references/handoff.md`. Cloud renders
+asks for the user's system and the folder's path, and gives two commands to paste (local render and
+GitHub Actions): `skills/fcwm/references/handoff.md`. Cloud renders
 always run on the user's own GitHub account.
 
 ## Repository layout
