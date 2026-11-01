@@ -11,6 +11,13 @@
   },
   "scripts": {
     "validate": "node scripts/validate.mjs",
-    "test": "node --test lib/test/lib.test.mjs"
+    "test": "node --test lib/test/lib.test.mjs qa/test/checks.test.mjs scripts/test/cli.test.mjs",
+    "fcwm": "node scripts/fcwm.mjs"
+  },
+  "bin": {
+    "fcwm": "scripts/fcwm.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
   }
 }
