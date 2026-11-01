@@ -1,0 +1,14 @@
+{
+  "name": "fcwm",
+  "owner": { "name": "FCWM contributors" },
+  "description": "FCWM: open motion graphics toolkit for AI agents, versioned as one plugin.",
+  "plugins": [
+    {
+      "name": "fcwm",
+      "source": "./",
+      "description": "Motion graphics as code for any AI agent. 2D, 3D and audio films written as deterministic code and rendered on your own machine or in GitHub Actions. Picks the engine for the job, runs a quick or a full production process, checks quality and exports every format. Brand-neutral: you set the direction.",
+      "homepage": "https://github.com/FrameCoreWorks/FCMW",
+      "license": "Apache-2.0"
+    }
+  ]
+}
