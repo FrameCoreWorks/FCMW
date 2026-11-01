@@ -4,7 +4,7 @@ description: Build an FCWM film on the Blender engine (bpy scenes rendered with 
 license: Apache-2.0
 compatibility: Needs the full FCWM repository (git clone), Node 22+, FFmpeg and uv. uv fetches the Blender Python module (bpy, pinned, 250-400 MB) and Python 3.13 once. macOS on Apple silicon, Linux x86_64, Windows. A GPU makes full renders practical.
 metadata:
-  version: "0.3.0"
+  version: "0.3.3"
 ---
 
 # FCWM on Blender

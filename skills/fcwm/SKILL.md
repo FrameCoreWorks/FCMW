@@ -4,7 +4,7 @@ description: Entry point for making motion graphics as code with FCWM. Use whene
 license: Apache-2.0
 compatibility: Any agent that reads Agent Skills. Rendering needs the full FCWM repository (git clone), a shell with Node 22+ and FFmpeg; `node scripts/fcwm.mjs doctor` lists anything missing. Agents without a shell hand the user a command to run.
 metadata:
-  version: "0.3.0"
+  version: "0.3.3"
 ---
 
 # FCWM

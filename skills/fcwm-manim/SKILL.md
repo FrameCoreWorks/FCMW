@@ -4,7 +4,7 @@ description: Build an FCWM film on the Manim engine (Manim Community, Python sce
 license: Apache-2.0
 compatibility: Needs the full FCWM repository (git clone), Node 22+, FFmpeg and uv. uv fetches Manim (pinned) and Python 3.12 on first use. Linux also needs Pango and Cairo headers (fcwm setup installs them). LaTeX only if the film uses MathTex or Tex.
 metadata:
-  version: "0.3.0"
+  version: "0.3.3"
 ---
 
 # FCWM on Manim

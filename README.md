@@ -8,7 +8,7 @@ Claude apps, Codex, ChatGPT, Cursor, Gemini CLI and others. It brings no brand a
 You set the direction; FCWM brings the workshop: engines, a production method, quality control and
 rendering.
 
-> **Status: 0.3.0.** Established open engines render end to end: HyperFrames (the default: 2-D, 3-D with
+> **Status: 0.3.3.** Established open engines render end to end: HyperFrames (the default: 2-D, 3-D with
 > three.js, synthesized music, Lottie and animated SVG), Manim (equations, graphs, technical
 > explainers) and Blender (photoreal 3-D with Cycles; GPL, tier restricted), driven by one
 > cross-platform command with automated quality checks, extra formats (GIF, WebM, ProRes, transparent
