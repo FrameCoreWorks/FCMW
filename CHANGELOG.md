@@ -2,6 +2,11 @@
 
 ## 0.3.0 (unreleased)
 
+- Extra delivery formats: `fcwm render <film> --export gif,webm,mov` (or `"exports"` in film.json)
+  transcodes the delivered MP4 to GIF, WebM VP9 and ProRes 422 HQ. Transparency: `fcwm new <film>
+  --alpha` starts a HyperFrames film on a transparent ground and renders `mov-alpha` (ProRes 4444) or
+  `webm-alpha` (VP9 with alpha) straight from the engine. QA checks every export exists, has the right
+  size, and that alpha exports really carry an alpha channel.
 - No renders for pull requests from forks: the `smoke` and `install` jobs skip unless the pull request
   comes from a branch of this repository; fork pull requests get only `validate` (no browser, no ffmpeg).
   `npm run validate` fails if a rendering job loses that guard or any workflow uses

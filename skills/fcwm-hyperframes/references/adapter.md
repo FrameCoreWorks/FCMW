@@ -12,6 +12,7 @@ exact version FCWM was tested with. Telemetry is off for every call (`HYPERFRAME
 | `fcwm render <film> --check` | `check` (lint, runtime, layout, contrast), then `snapshot --at <beats>`, tiled into contact sheets |
 | `fcwm render <film> --at 1,2` | `snapshot --at 1,2` into `<film>/render/stills/` |
 | `fcwm render <film>` | `render -q delivery --strict`, then FCWM's phone preview and QA |
+| `--export mov-alpha` / `webm-alpha` | `render --format mov` (ProRes 4444) / `--format webm` (VP9 alpha) |
 
 The FCWM starter drives the picture through HyperFrames' `hf-seek` event (`renderAt(t)`), which is
 FCWM's render contract, and marks the root `data-no-timeline`. GSAP is never required; a film that

@@ -200,3 +200,31 @@ test('pathtrace.js never calls Math.random or the clock to paint', () => {
   assert.doesNotMatch(src, /Date\.now|performance\.now|requestAnimationFrame|setTimeout/);
   assert.doesNotMatch(src, /Math\.random\(\)/);
 });
+
+test('exports: parse, transcode args, alpha only from engines that can render it', async () => {
+  const { parseExports, exportSteps, exportPath } = await import('../lib/export.mjs');
+  assert.deepEqual(parseExports('gif,webm,gif'), ['gif', 'webm']);
+  assert.deepEqual(parseExports(undefined), []);
+  assert.throws(() => parseExports('avi'), /unknown export avi/);
+  const root = tmp();
+  makeFilm(root, 'm', { engine: 'motion-reel' }, { 'film.js': '' });
+  const film = loadFilm('m', root);
+  const mr = await loadAdapter('motion-reel');
+  const [gif] = exportSteps(film, mr, ['9x16'], ['gif']);
+  assert.equal(gif.cmd, 'ffmpeg');
+  assert.equal(gif.args.at(-1), path.join(film.renderDir, 'm-9x16.gif'));
+  assert.throws(() => exportSteps(film, mr, ['9x16'], ['mov-alpha']), /cannot render transparency/);
+  makeFilm(root, 'h', { engine: 'hyperframes', fps: 30 });
+  const hfFilm = loadFilm('h', root);
+  const [alpha] = exportSteps(hfFilm, await loadAdapter('hyperframes'), ['9x16'], ['mov-alpha']);
+  assert.ok(alpha.args.includes('--format') && alpha.args.includes('mov'));
+  assert.equal(alpha.args[alpha.args.indexOf('-o') + 1], exportPath(hfFilm, '9x16', 'mov-alpha'));
+});
+
+test('fcwm new --alpha: transparent ground and a mov-alpha export; refused for motion-reel', async () => {
+  const root = tmp();
+  assert.equal(await main(['new', 'ov', '--alpha', '--duration', '3'], { cwd: root, ...quiet }), 0);
+  assert.match(fs.readFileSync(path.join(root, 'ov', 'index.html'), 'utf8'), /--ground: transparent;/);
+  assert.deepEqual(loadFilm('ov', root).config.exports, ['mov-alpha']);
+  await assert.rejects(main(['new', 'x3', '--alpha', '--engine', 'motion-reel'], { cwd: root, ...quiet }), /HyperFrames/);
+});

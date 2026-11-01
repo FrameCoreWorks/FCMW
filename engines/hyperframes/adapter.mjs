@@ -23,12 +23,13 @@ export default {
   tier: 'free',
   requires: () => ['npx', 'ffmpeg', 'ffprobe'],
 
-  scaffoldSteps(root, slug, { duration = 15, formats = ['9x16'], title } = {}) {
+  scaffoldSteps(root, slug, { duration = 15, formats = ['9x16'], title, alpha = false } = {}) {
     return [{ label: 'scaffold (FCWM HyperFrames starter)', fn: () => {
       if (formats.length > 1) throw new Error('a HyperFrames film is composed for one format; make one film per format');
       const [W, H] = SIZES[formats[0]];
       const vars = { W, H, DURATION: duration, FPS: 30, SIZE: Math.round(Math.min(W, H) * 0.13),
-        TITLE: (title || slug).replace(/"/g, '\\"'), FORMATS: JSON.stringify(formats) };
+        TITLE: (title || slug).replace(/"/g, '\\"'), FORMATS: JSON.stringify(formats),
+        GROUND: alpha ? 'transparent' : '#111111', EXPORTS: JSON.stringify(alpha ? ['mov-alpha'] : []) };
       const dir = path.join(root, slug);
       fs.mkdirSync(dir);
       for (const name of ['index.html', 'film.json']) {
@@ -38,6 +39,14 @@ export default {
       copyLib(path.join(dir, 'lib', 'fcwm'));
       for (const d of ['assets', 'audio', 'docs']) fs.mkdirSync(path.join(dir, d));
     } }];
+  },
+
+  // Transparent renders straight from HyperFrames: ProRes 4444 (MOV) or VP9 with alpha (WebM). The page
+  // background must be transparent for the alpha to mean anything (film.json "alpha": true in the starter).
+  alphaSteps(film, kind, format, out) {
+    const container = kind === 'mov-alpha' ? 'mov' : 'webm';
+    return [{ label: `render ${format} with alpha (${container})`, ...hf(['render', film.dir, '-o', out, '--format', container,
+      '-f', String(film.fps), '-q', 'delivery', '--quiet'], film.root) }];
   },
 
   plan(film, mode, { at = '' } = {}) {

@@ -11,6 +11,14 @@ function tool(cmd, args) {
   return r;
 }
 
+// An alpha export must really carry alpha: a yuva/rgba pixel format (ProRes 4444) or VP9's alpha_mode tag.
+export function alphaChannel(file) {
+  const r = tool('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=pix_fmt:stream_tags=alpha_mode', '-of', 'json', file]);
+  const s = JSON.parse(r.stdout || '{}').streams?.[0] || {};
+  const pass = /^(yuva|rgba|argb|bgra|abgr|gbrap|ya)/.test(s.pix_fmt || '') || s.tags?.alpha_mode === '1' || s.tags?.ALPHA_MODE === '1';
+  return { pass, pixFmt: s.pix_fmt, alphaMode: s.tags?.alpha_mode ?? s.tags?.ALPHA_MODE };
+}
+
 export function probe(file) {
   const r = tool('ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_type,width,height,r_frame_rate,avg_frame_rate,pix_fmt:format=duration', '-of', 'json', file]);
   if (r.status !== 0) throw new Error(`ffprobe could not read ${file}: ${r.stderr.trim()}`);

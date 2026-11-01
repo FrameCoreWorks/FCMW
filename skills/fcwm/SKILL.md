@@ -38,7 +38,7 @@ Ask only for what is missing, in one round:
 | The idea in one sentence | none, always ask |
 | Duration | 15 s |
 | Aspect ratios | 9:16; every extra ratio gets its own composition, not a crop |
-| Output formats | MP4 (H.264) |
+| Output formats | MP4 (H.264); on request GIF, WebM, ProRes (`--export gif,webm,mov`); transparent overlays as ProRes 4444 or WebM with alpha (`mov-alpha`, `webm-alpha`, HyperFrames films started with `--alpha`) |
 | Look and tone | ask; never invent one |
 | Brand kit | none; use `brand-kit/` only if the user has saved one or provides assets |
 | Sound | the user's own track, a synthesized score and effects on the beat grid, or silent |
