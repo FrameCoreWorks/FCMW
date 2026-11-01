@@ -23,7 +23,7 @@
       "upstream": "https://github.com/heygen-com/hyperframes",
       "requirements": "Node 22+, FFmpeg; Chrome is downloaded by the HyperFrames CLI on first render.",
       "notes": "Run through npx at a pinned version with telemetry off (HYPERFRAMES_NO_TELEMETRY=1, DO_NOT_TRACK=1). Optional GSAP animations use the GSAP Standard licence (free, custom terms with a no-compete clause, not OSI): treat as restricted when a film imports it.",
-      "status": "planned",
+      "status": "experimental",
       "checked": "2026-11-01",
       "version": "0.8.226",
       "stars": 76700

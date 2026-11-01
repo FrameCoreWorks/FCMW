@@ -7,7 +7,7 @@ import { parseArgs } from '../lib/args.mjs';
 import { buildCommand, quoteWin } from '../lib/proc.mjs';
 import { checkTools } from '../lib/tools.mjs';
 import { loadFilm, loadAdapter } from '../lib/film.mjs';
-import { main } from '../fcwm.mjs';
+import { main, LOADS_GSAP } from '../fcwm.mjs';
 import { gridJSON } from '../../engines/motion-reel/adapter.mjs';
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fcwm cli '));
@@ -102,4 +102,42 @@ test('fcwm render --dry-run prints steps and runs nothing', async () => {
   assert.match(out, /picture 9x16/);
   assert.match(out, /phone preview/);
   assert.equal(fs.existsSync(path.join(root, 'm', 'render')), false);
+});
+
+test('hyperframes adapter: pinned version, telemetry off, exact render args', async () => {
+  const { HYPERFRAMES_VERSION, ENV } = await import('../../engines/hyperframes/adapter.mjs');
+  const hf = await loadAdapter('hyperframes');
+  const root = tmp();
+  makeFilm(root, 'h', { engine: 'hyperframes', fps: 30, formats: ['1x1'] });
+  const film = loadFilm('h', root);
+  const r = hf.plan(film, 'full').find((s) => s.cmd);
+  assert.equal(HYPERFRAMES_VERSION, '0.8.226');
+  assert.deepEqual(r.args, ['-y', 'hyperframes@0.8.226', 'render', film.dir, '-o', path.join(film.renderDir, 'h-1x1.mp4'),
+    '-f', '30', '-q', 'delivery', '--strict', '--quiet']);
+  assert.equal(r.env.HYPERFRAMES_NO_TELEMETRY, '1');
+  assert.equal(r.env.DO_NOT_TRACK, '1');
+  assert.deepEqual(ENV, r.env);
+});
+
+test('hyperframes scaffold: template filled for the format, lib copied, one format only', async () => {
+  const hf = await loadAdapter('hyperframes');
+  const root = tmp();
+  const [step] = hf.scaffoldSteps(root, 'sq', { duration: 6, formats: ['1x1'] });
+  step.fn();
+  const html = fs.readFileSync(path.join(root, 'sq', 'index.html'), 'utf8');
+  assert.doesNotMatch(html, /\{\{/);
+  assert.match(html, /data-width="1080" data-height="1080"/);
+  assert.doesNotMatch(html, LOADS_GSAP);
+  assert.match('<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>', LOADS_GSAP);
+  assert.ok(fs.existsSync(path.join(root, 'sq', 'lib', 'fcwm', 'core.js')));
+  assert.equal(fs.existsSync(path.join(root, 'sq', 'lib', 'fcwm', 'test')), false);
+  assert.deepEqual(loadFilm('sq', root).formats, ['1x1']);
+  assert.throws(() => hf.scaffoldSteps(root, 'two', { formats: ['1x1', '9x16'] })[0].fn(), /one format/);
+});
+
+test('stillTime reads both engines\' still names', async () => {
+  const { stillTime } = await import('../lib/contact.mjs');
+  assert.equal(stillTime('frame-02-at-3.75s.png'), 3.75);
+  assert.equal(stillTime('t0.250_9x16.png'), 0.25);
+  assert.ok(Number.isNaN(stillTime('contact.png')));
 });

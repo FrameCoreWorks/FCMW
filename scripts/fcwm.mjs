@@ -16,11 +16,14 @@ import { parseArgs } from './lib/args.mjs';
 import { loadFilm, loadAdapter, ENGINES, FORMATS } from './lib/film.mjs';
 import { describe, runSteps } from './lib/pipeline.mjs';
 import { checkTools, hasPlaywright } from './lib/tools.mjs';
-import { run } from './lib/proc.mjs';
+import { byStillTime } from './lib/contact.mjs';
 import { checkVideo, determinism, summarize } from '../qa/checks.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const catalog = JSON.parse(fs.readFileSync(path.join(REPO, 'engines', 'catalog.json'), 'utf8'));
+
+// A film loads GSAP when a script tag or an import names it, or it calls gsap.*; a comment does not count.
+export const LOADS_GSAP = /<script[^>]*gsap|from\s+['"][^'"]*gsap|\bgsap\.(timeline|to|from|set)\b/i;
 
 class UserError extends Error { constructor(msg, code = 1) { super(msg); this.code = code; } }
 
@@ -86,6 +89,9 @@ async function prepare(target, a, cwd, log) {
   const entry = engineEntry(film.engine);
   if (entry.tier !== 'free') log(`note: ${entry.name} is "${entry.tier}" (${entry.license}). ${entry.license_note || entry.notes || ''}`);
   if (entry.status === 'experimental') log(`note: the ${entry.name} engine is experimental in FCWM ${JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'))).version}.`);
+  const html = path.join(film.dir, 'index.html');
+  if (fs.existsSync(html) && LOADS_GSAP.test(fs.readFileSync(html, 'utf8')))
+    log('note: this film loads GSAP, which is "restricted" (GSAP Standard licence: free, custom terms with a no-compete clause, not open source).');
   const adapter = await loadAdapter(film.engine);
   return { film, adapter };
 }
@@ -132,7 +138,7 @@ async function qaFilm(film, formats, a, log) {
     const stillsDir = path.join(film.renderDir, 'stills');
     report.determinism = await determinism(async (tag) => {
       await runSteps((await loadAdapter(film.engine)).plan(film, 'at', { at: at.join(','), formats: [formats[0]] }), { log: () => {} });
-      const files = fs.readdirSync(stillsDir).filter((n) => n.endsWith('.png')).sort();
+      const files = fs.readdirSync(stillsDir).filter((n) => n.endsWith('.png')).sort(byStillTime);
       const tagged = path.join(film.renderDir, `determinism-${tag}`);
       fs.mkdirSync(tagged, { recursive: true });
       return files.map((n, i) => { const p = path.join(tagged, n); fs.copyFileSync(path.join(stillsDir, n), p); return { t: at[i] ?? n, file: p }; });

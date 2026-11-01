@@ -1,0 +1,7 @@
+{
+  "title": "{{TITLE}}",
+  "engine": "hyperframes",
+  "duration": {{DURATION}},
+  "fps": {{FPS}},
+  "formats": {{FORMATS}}
+}
