@@ -7,6 +7,8 @@
 // 4. integrations/catalog.json entries (optional services) are complete and never carry a key.
 // 5. No brand name and nothing that looks like an API key appears in shipped files.
 // 6. Copies in skills/*/references/ match their sources (scripts/sync-skill-refs.mjs).
+// 7. No renders from pull requests opened from forks.
+// 8. plugin-files.json (file list with SHA-256 for file-by-file installs) is up to date.
 
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -221,6 +223,10 @@ if (existsSync(wfDir)) {
 // ---------- 6. skill reference copies ----------
 const { drift } = await import("./sync-skill-refs.mjs");
 for (const rel of drift()) fail(rel, "out of date with its source: run node scripts/sync-skill-refs.mjs");
+
+// ---------- 8. plugin file inventory ----------
+const inventory = await import("./inventory.mjs");
+if (inventory.stale()) fail(inventory.OUT, "out of date: run node scripts/inventory.mjs");
 
 if (errors.length) {
   console.error(`validate: ${errors.length} problem(s)\n` + errors.map((e) => `  - ${e}`).join("\n"));

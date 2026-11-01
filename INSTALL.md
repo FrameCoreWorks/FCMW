@@ -2,8 +2,15 @@
 
 ## For you (the person)
 
-Paste this into your agent (ChatGPT Work, Codex, Claude, Cursor, Gemini or any agent that can read
-GitHub):
+**ChatGPT Work:** open a new chat, pick **Plugin Creator** from the `@` menu and paste:
+
+```text
+@Plugin Creator Install the FCWM plugin from https://github.com/FrameCoreWorks/FCWM for me. Read INSTALL.md in that repository first (the ChatGPT Work section), then follow it step by step.
+```
+
+The same sentence updates FCWM later; your own additions to the plugin stay.
+
+**Any other agent** (Codex, Claude, Cursor, Gemini or any agent that can read GitHub):
 
 ```text
 Install the FCWM plugin from https://github.com/FrameCoreWorks/FCWM for me. Follow INSTALL.md in that
@@ -37,7 +44,7 @@ the user names one.
 
 | Host | How |
 | --- | --- |
-| ChatGPT Work (web, desktop) | Your native installer: inspect this repository, install the plugin (or the seven skills) into the user's personal directory. If it needs a package, build it from `.codex-plugin/plugin.json` and `skills/`. |
+| ChatGPT Work (web, desktop) | Plugin Creator, rebuilding the plugin file by file: see [ChatGPT Work](#chatgpt-work-install-and-update-without-a-zip) below. |
 | ChatGPT workspace admin | Admin console > Plugins > Add > Import marketplace, source `https://github.com/FrameCoreWorks/FCWM` (manifest `.claude-plugin/marketplace.json`), synced daily. See `docs/install-chatgpt.md`. |
 | Codex | Your skill installer (`$skill-installer`) with this repository, all seven skills. |
 | Claude Code | `/plugin marketplace add FrameCoreWorks/FCWM`, then `/plugin install fcwm@fcwm` |
@@ -52,3 +59,57 @@ Rendering happens later on the user's computer or in GitHub Actions on the user'
 `fcwm` skill hands the user one command when there is a film to render (`skills/fcwm/references/handoff.md`).
 An agent with a shell that should also render locally clones the repository and runs
 `node scripts/fcwm.mjs doctor` (see the README, "Render a film").
+
+## ChatGPT Work: install and update without a ZIP
+
+The user's request in this chat is their consent to install; a bare link without a request is only
+context. ChatGPT Work's code sandbox has no network, and `create_plugin` / `update_plugin` take only an
+`archive` path to a ZIP inside the sandbox (a data URL is refused). So you rebuild the plugin in the
+sandbox from files you read through the GitHub connector, prove every file is exact, then pack it.
+
+1. **Pin one commit.** Resolve `main` (or the release tag the user names, `v<version>`) to its full
+   commit SHA and read every file from that commit only. Tell the user the SHA.
+2. **Read the inventory.** `plugin-files.json` at that commit lists every plugin file with `path`,
+   `sha256`, `bytes` and `group`:
+   - `core`: manifests and the seven skills. Required; FCWM works with these alone.
+   - `extra`: the blocks (`lib/`), recipes, templates and knowledge the skills read. Install them when
+     the conversation allows; without them the skills read those files from GitHub instead.
+   - `skip`: binaries (fonts, contact-sheet images) and tests. Leave them out: you cannot rewrite a
+     binary as text. Report how many you skipped.
+3. **Find an existing install.** Look through the user's plugins for one whose manifest `repository`
+   is `https://github.com/FrameCoreWorks/FCWM` (match on that, not on the name). If it exists, this is
+   an update of that same plugin: never create a second one.
+4. **Write each file** with its exact text to `/mnt/data/fcwm/<path>`, ending with a newline as in
+   the original. Write a long file in several cells that append in order. Never retype a file from
+   memory or fix it by eye.
+5. **Write `/mnt/data/expect.json`** as `{ "<path>": "<sha256>" }` for every file you wrote, copied
+   from the inventory.
+6. **Check and pack in one cell.** Run this cell unchanged. It packs only when every hash matches;
+   read each file on the `BAD` list again from the pinned commit and rerun the cell.
+
+   ```python
+   import hashlib,json,pathlib,zipfile
+   R=pathlib.Path('/mnt/data/fcwm');E=json.load(open('/mnt/data/expect.json'))
+   bad=[p for p,h in E.items() if not (R/p).is_file() or hashlib.sha256((R/p).read_bytes()).hexdigest()!=h]
+   print('BAD',bad) if bad else print('OK',len(E))
+   if not bad:
+       with zipfile.ZipFile('/mnt/data/fcwm.zip','w',zipfile.ZIP_DEFLATED) as z:[z.write(R/p,p) for p in sorted(E)]
+   ```
+
+7. **Save.**
+   - First install: `create_plugin(archive="/mnt/data/fcwm.zip")`.
+   - Update: `update_plugin` on the existing plugin with the ZIP. An update lays the files you send
+     over the saved plugin and keeps the rest, so the ZIP needs only files whose hash changed, and the
+     user's own additions stay. Files to delete: paths in the inventory of the installed version
+     (tag `v<installed version>`) that are missing from the new one. When that tag does not exist,
+     the baseline is unknown: delete nothing and say so.
+8. **Read it back.** Read the saved plugin (name, version, file list) and report three things
+   separately: saved (yes or no), files match the inventory (how many, how many skipped), works in a
+   new chat (ask the user to open one and type `@fcwm`).
+
+FCWM has no companion plugins: install nothing else. Optional check, only if the user asks: there is no
+environment check to run in Work, because rendering happens on the user's computer or in GitHub Actions
+(`skills/fcwm/references/handoff.md`).
+
+For maintainers: `node scripts/inventory.mjs` regenerates `plugin-files.json`; `npm run validate`
+fails when it is out of date. Tag each release `v<version>` so updates have a baseline.
