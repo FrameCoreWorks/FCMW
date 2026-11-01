@@ -13,8 +13,9 @@ rendering.
 > technical explainers) and Blender (photoreal 3-D with Cycles; GPL, tier restricted), driven by one
 > cross-platform command with automated quality checks, extra formats (GIF, WebM, ProRes, transparent
 > ProRes 4444 / WebM), optional brand kits, tested film blocks (transitions, titles, lower thirds,
-> captions, end cards) and a one-line installer that renders a film folder on any computer. All engines
-> are marked experimental.
+> captions, end cards) and a one-line installer that sets up the whole render toolkit and renders a film
+> folder on any computer. Tested end to end on Linux (CI), Windows (CI) and an Apple M4 Mac; path-traced
+> 3-D is the one experimental mode.
 
 ## Why code
 

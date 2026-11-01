@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { handoffCommand, quoteSh, quotePs, normalizeOs } from '../lib/handoff.mjs';
-import { installPlan, requirementsFor, detect, ensure, writeState, readState } from '../lib/setup.mjs';
+import { installPlan, requirementsFor, detect, ensure, writeState, readState, FULL } from '../lib/setup.mjs';
 import { copySource } from '../lib/cloud.mjs';
 import { main, filmsIn } from '../fcwm.mjs';
 
@@ -60,7 +60,18 @@ test('installPlan: the package manager of each OS, or a manual step', () => {
   assert.deepEqual(installPlan('chromium', { platform: 'darwin', repo: '/r' }).args, ['playwright', 'install', 'chromium']);
   assert.deepEqual(installPlan('ffmpeg', { platform: 'win32', hasBin: (b) => b === 'choco' }).args, ['install', 'ffmpeg', '-y', '--no-progress']);
   assert.deepEqual(installPlan('ffmpeg', { platform: 'win32', hasBin: (b) => b === 'scoop' }).args, ['install', 'ffmpeg']);
-  assert.ok(installPlan('hyperframes').note);
+  assert.deepEqual(installPlan('hyperframes').args.slice(-2), ['browser', 'ensure']);
+  assert.ok(installPlan('manim').args.includes('--with') && installPlan('manim').args.some((x) => /^manim==/.test(x)));
+  assert.ok(installPlan('bpy').args.some((x) => /^bpy==/.test(x)));
+  assert.ok(!installPlan('bpy').args.includes('--offline'));
+});
+
+test('FULL: every engine, uv before the Python engines', () => {
+  for (const n of ['ffmpeg', 'uv', 'chromium', 'hyperframes', 'manim', 'bpy']) assert.ok(FULL.includes(n), n);
+  assert.ok(FULL.indexOf('uv') < FULL.indexOf('manim') && FULL.indexOf('uv') < FULL.indexOf('bpy'));
+  const root = tmp();
+  assert.deepEqual(requirementsFor({ engine: 'manim', dir: film(root, 'm', {}) }).filter((n) => n !== 'pango'), ['ffmpeg', 'uv', 'manim']);
+  assert.deepEqual(requirementsFor({ engine: 'blender', dir: film(root, 'b', {}) }), ['ffmpeg', 'uv', 'bpy']);
 });
 
 test('detect + ensure (dry run): nothing on an empty PATH, every tool planned, nothing run', async () => {

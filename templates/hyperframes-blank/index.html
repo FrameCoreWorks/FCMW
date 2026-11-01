@@ -29,21 +29,20 @@
   <body>
     <div id="root" data-composition-id="main" data-start="0" data-duration="{{DURATION}}"
          data-width="{{W}}" data-height="{{H}}" data-fps="{{FPS}}" data-no-timeline>
-      <h1 id="title" aria-label="Your title"></h1>
+      <h1 id="title" aria-label="{{TEXT_ATTR}}"></h1>
       <div id="rule"></div>
     </div>
     <script type="module">
       import { ease, prog } from './lib/fcwm/core.js';
       import { rise } from './lib/fcwm/type.js';
 
-      const TEXT = 'Your title';  // placeholder: replace with the film's own words (and the aria-label above)
+      const TEXT = {{TEXT_JS}};  // the film's own words (from --title); change it here and in the aria-label above
       const title = document.getElementById('title');
       const rule = document.getElementById('rule');
       // Build the glyph spans once; every frame only sets their transforms from t.
       const glyphs = [...TEXT].map((ch) => {
         const slot = document.createElement('span');
         slot.className = 'slot';
-        slot.dataset.layoutAllowOverflow = '';  // the slot clips on purpose: letters rise out of it
         const g = document.createElement('span');
         g.className = 'g';
         g.textContent = ch === ' ' ? ' ' : ch;
@@ -51,6 +50,10 @@
         title.appendChild(slot);
         return g;
       });
+      // Fit once, before any frame: a line wider than its box shrinks until it fits (never grows), so a long
+      // title never runs off the frame. Same result every frame, because it depends only on the text.
+      const fit = Math.min(1, title.clientWidth / title.scrollWidth);
+      if (fit < 1) title.style.fontSize = `${(parseFloat(getComputedStyle(title).fontSize) * fit).toFixed(2)}px`;
 
       function renderAt(t) {
         const size = parseFloat(getComputedStyle(title).fontSize);

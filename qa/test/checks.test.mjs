@@ -64,6 +64,11 @@ test('determinism: compares bytes per time', async () => {
   });
   assert.equal((await determinism((tag) => write(tag, true))).pass, true);
   assert.deepEqual((await determinism((tag) => write(tag, false))).diffs, [1]);
+  // GPU tolerance: a pair at 60 dB passes as near-identical, one at 30 dB fails
+  const hi = await determinism((tag) => write(tag, false), { minPsnr: 50, compare: () => 60 });
+  assert.equal(hi.pass, true);
+  assert.deepEqual(hi.nearIdentical, [{ t: 1, psnr: 60 }]);
+  assert.deepEqual((await determinism((tag) => write(tag, false), { minPsnr: 50, compare: () => 30 })).diffs, [1]);
 });
 
 test('alphaChannel: ProRes 4444 with alpha passes, H.264 fails', { skip }, () => {

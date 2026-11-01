@@ -112,6 +112,9 @@ sandbox from files you read through the GitHub connector, prove every file is ex
    separately: saved (yes or no), files match the inventory (how many, how many skipped), works in a
    new chat (ask the user to open one and type `@fcwm`).
 
+After the install, FCWM never renders inside Work's sandbox: the `fcwm` skill hands the user one film
+folder and one command for their own computer (any OS) or GitHub Actions.
+
 FCWM has no companion plugins: install nothing else. Optional check, only if the user asks: there is no
 environment check to run in Work, because rendering happens on the user's computer or in GitHub Actions
 (`skills/fcwm/references/handoff.md`).

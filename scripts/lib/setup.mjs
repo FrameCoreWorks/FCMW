@@ -7,7 +7,24 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
 import { which } from './tools.mjs';
-import { run } from './proc.mjs';
+import { run, buildCommand } from './proc.mjs';
+import { HYPERFRAMES_VERSION, HYPERFRAMES_ENV, MANIM_VERSION, MANIM_PYTHON, BPY_VERSION, BPY_PYTHON } from './versions.mjs';
+
+// The whole render toolkit, in install order (Pango before Manim, uv before the Python engines). The
+// one-line installer sets all of it up on the first run, so every engine renders without a later download.
+export const FULL = ['ffmpeg', 'uv', 'chromium', 'hyperframes', ...(process.platform === 'linux' ? ['pango'] : []), 'manim', 'bpy'];
+export const SIZES = { chromium: '~170 MB', hyperframes: '~150 MB (CLI and its Chrome)', manim: '~100 MB', bpy: '~400 MB (Blender as a Python module)' };
+
+// Python engines run as `uv run --with <pkg>==<pin>`; --offline succeeds only when uv already has them.
+const pyEngine = { manim: [MANIM_PYTHON, `manim==${MANIM_VERSION}`, 'import manim'], bpy: [BPY_PYTHON, `bpy==${BPY_VERSION}`, 'import bpy'] };
+const uvArgs = (name, offline) => {
+  const [py, pkg, code] = pyEngine[name];
+  return ['run', '--quiet', ...(offline ? ['--offline'] : []), '--no-project', '--python', py, '--with', pkg, 'python', '-c', code];
+};
+const quiet = (cmd, args, env) => {
+  const c = buildCommand(cmd, args);
+  return spawnSync(c.file, c.args, { shell: c.shell, encoding: 'utf8', env: { ...process.env, ...env }, timeout: 120000 });
+};
 
 export const fcwmHome = (env = process.env) => env.FCWM_HOME || path.join(os.homedir(), '.fcwm');
 export const statePath = (env = process.env) => path.join(fcwmHome(env), 'state.json');
@@ -21,9 +38,9 @@ export function requirementsFor(film) {
   }
   if (film.engine === 'hyperframes') need.push('hyperframes');
   // Manim runs through uv; on Linux its text renderer (ManimPango) builds against the system Pango
-  if (film.engine === 'manim') { need.push('uv'); if (process.platform === 'linux') need.push('pango'); }
+  if (film.engine === 'manim') { need.push('uv'); if (process.platform === 'linux') need.push('pango'); need.push('manim'); }
   // Blender runs as the bpy module through uv (a ~250-400 MB wheel, fetched once into uv's cache)
-  if (film.engine === 'blender') need.push('uv');
+  if (film.engine === 'blender') need.push('uv', 'bpy');
   return need;
 }
 
@@ -47,7 +64,16 @@ export function detect(names, { repo, platform = process.platform, envPath } = {
       found.ffmpeg = a && b ? a : null;
     } else if (n === 'chromium') found.chromium = chromiumPath([repo]);
     else if (n === 'pango') found.pango = spawnSync('pkg-config', ['--exists', 'pangocairo']).status === 0 ? 'pkg-config pangocairo' : null;
-    else if (n === 'hyperframes') found.hyperframes = which('npx', { path: envPath, platform }); // CLI and its Chrome arrive via npx on first render
+    else if (n === 'hyperframes') {
+      // the pinned CLI in npx's cache and the Chrome it renders with
+      if (!which('npx', { path: envPath, platform })) { found.hyperframes = null; continue; }
+      const r = quiet('npx', ['--no-install', `hyperframes@${HYPERFRAMES_VERSION}`, 'browser', 'path'], HYPERFRAMES_ENV);
+      const exe = r.status === 0 ? (r.stdout || '').trim().split(/\r?\n/).pop() : '';
+      found.hyperframes = exe && fs.existsSync(exe) ? exe : null;
+    } else if (n in pyEngine) {
+      if (!which('uv', { path: envPath, platform })) { found[n] = null; continue; }
+      found[n] = quiet('uv', uvArgs(n, true)).status === 0 ? `uv cache (${pyEngine[n][1]})` : null;
+    }
     else found[n] = which(n, { path: envPath, platform });
   }
   return found;
@@ -61,7 +87,8 @@ export function installPlan(name, { platform = process.platform, repo, hasBin = 
   if (name === 'chromium') {
     return { ...npx, args: ['playwright', 'install', ...(platform === 'linux' ? ['--with-deps'] : []), 'chromium'], label: 'Chromium for Playwright' };
   }
-  if (name === 'hyperframes') return { note: 'HyperFrames and its Chrome download themselves on the first render (cached afterwards).' };
+  if (name === 'hyperframes') return { ...npx, args: ['-y', `hyperframes@${HYPERFRAMES_VERSION}`, 'browser', 'ensure'], env: HYPERFRAMES_ENV, label: `HyperFrames ${HYPERFRAMES_VERSION} and its Chrome` };
+  if (name in pyEngine) return { cmd: 'uv', args: uvArgs(name, false), label: `${pyEngine[name][1]} into uv's cache` };
   const pkgs = {
     ffmpeg: { brew: 'ffmpeg', winget: 'Gyan.FFmpeg', apt: 'ffmpeg', dnf: 'ffmpeg', pacman: 'ffmpeg' },
     uv: { brew: 'uv', winget: 'astral-sh.uv' },
@@ -120,9 +147,9 @@ export async function ensure(names, { repo, version, log = console.log, dryRun =
     const p = installPlan(n, { repo });
     if (p.note) { log(`note: ${p.note}`); continue; }
     if (p.manual) { manual.push(`${n}: ${p.manual}`); continue; }
-    log(`install ${p.label}: ${[p.cmd, ...p.args].join(' ')}`);
+    log(`install ${p.label}${SIZES[n] ? ` (${SIZES[n]}, once)` : ''}: ${[p.cmd, ...p.args].join(' ')}`);
     if (dryRun || !install) continue;
-    const { code } = await run(p.cmd, p.args, { cwd: p.cwd });
+    const { code } = await run(p.cmd, p.args, { cwd: p.cwd, env: p.env });
     if (code !== 0) { manual.push(`${n}: "${[p.cmd, ...p.args].join(' ')}" failed with exit code ${code}`); continue; }
     if (p.newPath && process.platform === 'win32') refreshWindowsPath();
     if (p.addPath) process.env.PATH = `${p.addPath}${path.delimiter}${process.env.PATH}`;
@@ -130,7 +157,7 @@ export async function ensure(names, { repo, version, log = console.log, dryRun =
   }
   if (dryRun || !install) return { ok: !missing.length, installed, already, missing, manual };
   const after = detect(names, { repo });
-  const still = names.filter((n) => !after[n] && n !== 'hyperframes');
+  const still = names.filter((n) => !after[n]);
   writeState(after, { version });
   for (const m of manual) log(`cannot install automatically: ${m}`);
   return { ok: still.length === 0, installed, already, missing: still, manual };

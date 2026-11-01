@@ -72,9 +72,9 @@ fi
 
 # Under `curl | bash` stdin is the script itself; give FCWM the keyboard back for prompts (sudo, gh login).
 if [ ! -t 0 ] && [ -r /dev/tty ] && (exec </dev/tty) 2>/dev/null; then
-  exec node "$APP/scripts/fcwm.mjs" run "$@" </dev/tty
+  exec node "$APP/scripts/fcwm.mjs" run --full "$@" </dev/tty
 fi
-exec node "$APP/scripts/fcwm.mjs" run "$@"
+exec node "$APP/scripts/fcwm.mjs" run --full "$@"
 }
 
 main "$@"

@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Mac test fixes (Apple M4, 2026-11-01):
+  - The one-line installer sets up the whole render toolkit on the first run (`fcwm run --full`):
+    FFmpeg, uv, Chromium, HyperFrames and its Chrome, Manim and Blender's bpy (Pango on Linux), each
+    only when missing. `fcwm setup` installs the same toolkit (`--list` only shows it); it used to only list.
+  - Engines HyperFrames, Lottie, motion-reel, Manim and Blender are `ready`; path tracing stays experimental.
+  - `fcwm new --title` puts the title on screen (HyperFrames starter), and a long title shrinks to fit.
+  - `render --check` fails when text stays off the frame (`text_off_frame`), with the full report in
+    `render/check.json`; HyperFrames reports it only as info.
+  - A full render rebuilds the contact sheets from the finished video, so they never show an older check.
+  - `doctor` fails when Playwright's Chromium is not downloaded.
+  - `qa --determinism` on motion-reel accepts GPU rounding noise (frames at 50 dB PSNR or more).
+  - Path-traced stills have no 30-second screenshot limit; the motion-reel starter no longer loads
+    screenshots that are not there.
+  - Skills: never try to render inside a chat app's sandbox, and never assume the user's OS.
 - Evals (`evals/`): five reference tasks (promo, chart, lyric clip, logo sting, 3-D product) and a scorer
   that renders each model's films and records render, QA, determinism, format and duration next to the
   judged visual scores; `node evals/run.mjs report` writes one table per release. First comparison of

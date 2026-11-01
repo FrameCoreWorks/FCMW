@@ -7,8 +7,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sheetTimes, tileSheets, clearSheets } from '../../scripts/lib/contact.mjs';
 
-export const MANIM_VERSION = '0.22.1';
-export const PYTHON = '3.12';
+import { MANIM_VERSION, MANIM_PYTHON as PYTHON } from '../../scripts/lib/versions.mjs';
+export { MANIM_VERSION, PYTHON };
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SIZES = { '9x16': [1080, 1920], '16x9': [1920, 1080], '1x1': [1080, 1080] };
 const FF = ['-hide_banner', '-loglevel', 'error', '-y'];
