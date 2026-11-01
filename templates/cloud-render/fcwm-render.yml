@@ -52,6 +52,7 @@ jobs:
           if [ "$MODE" = "check" ]; then node fcwm/scripts/fcwm.mjs render "$FILM" --check; else node fcwm/scripts/fcwm.mjs render "$FILM"; fi
       - name: Artifact name
         id: name
+        if: always()  # a failed render still uploads its files under the film's name
         env:
           FILM: ${{ inputs.film }}
         run: echo "name=$(basename "$FILM")" >> "$GITHUB_OUTPUT"

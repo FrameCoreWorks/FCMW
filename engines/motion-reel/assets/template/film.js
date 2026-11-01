@@ -44,6 +44,10 @@ function sceneHeadline(ctx, u) {
       glyph(ctx, g.ch, x0 + g.cx, base + (1 - k) * 160 - exit * (H + 200), f, i === 2 ? C.accent : C.ink, k, k);
     });
   });
+  // Hand-over to S2: a curtain in S2's background colour rises while the words leave, so no frame
+  // between the exit and the cut is an empty background (QA flags flat frames as blank).
+  const c = E.inCubic(prog(u, 7.45, 8));
+  if (c > 0) { ctx.fillStyle = C.ink; ctx.fillRect(0, H * (1 - c), W, H * c); }
 }
 
 // ---------------------------------------------------------------- S2 real product UI   (u 8..26)
