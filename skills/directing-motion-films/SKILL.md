@@ -11,8 +11,10 @@ The render runs no model: the machine replays your code frame by frame. All qual
 and in the order of work. This is the method that produced finished films, written down so any model
 can follow it. Direction (brand, palette, tone) always comes from the user; this skill is the craft.
 
-Files referenced below live in the plugin root: `knowledge/` (lessons, checklist, critique rubric),
-`lib/` (tested motion building blocks), `recipes/` (four annotated films).
+The lessons, checklist, critique rubric and render contract are copied into this skill's `references/`
+(`lessons.md`, `checklist.md`, `critique.md`, `render-contract.md`). Paths below starting with
+`knowledge/` mean those copies. `lib/` (tested motion building blocks) and `recipes/` (four annotated
+films) live in the FCWM repository root, two levels above this file.
 
 ## The method
 

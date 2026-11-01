@@ -5,6 +5,7 @@
 // 2. All host manifests and package.json share one name and version, and point at ./skills/.
 // 3. engines/catalog.json entries are complete and use a known tier and status.
 // 4. No brand name appears in shipped files.
+// 5. Copies in skills/*/references/ match their sources (scripts/sync-skill-refs.mjs).
 
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -149,6 +150,10 @@ function walk(dir) {
 walk(root);
 
 // ---------- report ----------
+// ---------- 5. skill reference copies ----------
+const { drift } = await import("./sync-skill-refs.mjs");
+for (const rel of drift()) fail(rel, "out of date with its source: run node scripts/sync-skill-refs.mjs");
+
 if (errors.length) {
   console.error(`validate: ${errors.length} problem(s)\n` + errors.map((e) => `  - ${e}`).join("\n"));
   process.exit(1);
