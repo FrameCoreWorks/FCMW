@@ -11,7 +11,7 @@ on:
         description: Film folder, relative to the repository root
         required: true
       mode:
-        description: full (video, mix, preview, QA) or check (contact sheets only)
+        description: full (video, mix, QA) or check (contact sheets only)
         type: choice
         options: [full, check]
         default: full

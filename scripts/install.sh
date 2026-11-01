@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # FCWM installer and renderer for macOS and Linux. One line, run from any folder:
 #
-#   curl -fsSL https://raw.githubusercontent.com/FrameCoreWorks/FCWM/main/scripts/install.sh | bash -s -- '<film folder>' [--cloud]
+#   curl -fsSL https://raw.githubusercontent.com/FrameCoreWorks/FCWM/main/scripts/install.sh | bash -s -- '<film folder>' [--cloud [--public]]
 #
 # 1. Checks Node.js 22+ (installs it with Homebrew on macOS when missing).
 # 2. Downloads FCWM into ~/.fcwm/app, or updates it when a newer version is out (FCWM_HOME moves it).
@@ -22,7 +22,7 @@ APP="$HOME_DIR/app"
 say() { printf 'fcwm: %s\n' "$*"; }
 die() { printf 'fcwm: %s\n' "$*" >&2; exit 1; }
 
-if [ "$#" -lt 1 ]; then die "usage: install.sh '<film folder>' [--cloud]"; fi
+if [ "$#" -lt 1 ]; then die "usage: install.sh '<film folder>' [--cloud [--public]]"; fi
 
 # --- Node.js 22+ ---------------------------------------------------------------------------
 node_major() { node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0; }

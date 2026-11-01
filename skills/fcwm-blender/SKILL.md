@@ -23,7 +23,7 @@ Before building, tell the user in one line: Blender is free and the renders are 
 | New film | `node <repo>/scripts/fcwm.mjs new <film> --engine blender [--format 16x9] [--duration 10] [--alpha]` |
 | Contact sheet (draft frames on the beat grid) | `node <repo>/scripts/fcwm.mjs render <film> --check` |
 | Stills at full quality | `node <repo>/scripts/fcwm.mjs render <film> --at 2,5.5` |
-| Full render, preview, QA | `node <repo>/scripts/fcwm.mjs render <film>` |
+| Full render and QA (`--preview` adds a small phone preview) | `node <repo>/scripts/fcwm.mjs render <film>` |
 | Extra formats | `--export gif,webm,mov,mov-alpha,webm-alpha` (alpha needs `"alpha": true`) |
 
 A Blender film may list several formats; each renders through its own camera framing (`film["width"]`,

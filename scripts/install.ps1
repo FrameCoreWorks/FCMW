@@ -1,6 +1,6 @@
 # FCWM installer and renderer for Windows (PowerShell 5.1 or 7). One line, run from any folder:
 #
-#   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/FrameCoreWorks/FCWM/main/scripts/install.ps1))) '<film folder>' [--cloud]
+#   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/FrameCoreWorks/FCWM/main/scripts/install.ps1))) '<film folder>' [--cloud [--public]]
 #
 # 1. Checks Node.js 22+ (installs it with winget when missing).
 # 2. Downloads FCWM into $HOME\.fcwm\app, or updates it when a newer version is out (FCWM_HOME moves it).
@@ -17,7 +17,7 @@ $HomeDir = if ($env:FCWM_HOME) { $env:FCWM_HOME } else { Join-Path $HOME '.fcwm'
 $App = Join-Path $HomeDir 'app'
 
 function Say($m) { Write-Host "fcwm: $m" }
-if ($args.Count -lt 1) { throw "usage: install.ps1 '<film folder>' [--cloud]" }
+if ($args.Count -lt 1) { throw "usage: install.ps1 '<film folder>' [--cloud [--public]]" }
 
 function Refresh-Path {
   $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')

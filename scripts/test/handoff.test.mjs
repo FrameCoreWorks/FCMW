@@ -6,7 +6,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { handoffCommand, quoteSh, quotePs, normalizeOs } from '../lib/handoff.mjs';
 import { installPlan, requirementsFor, detect, ensure, writeState, readState, FULL } from '../lib/setup.mjs';
-import { copySource } from '../lib/cloud.mjs';
+import { copySource, tempRepoName, cloudPlan } from '../lib/cloud.mjs';
 import { main, filmsIn } from '../fcwm.mjs';
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "fcwm handoff & co's "));
@@ -141,4 +141,34 @@ test('fcwm command prints the line to paste', async () => {
   const lines = [];
   await main(['command', VOLUME, '--os', 'macos', '--next'], { log: (l) => lines.push(l) });
   assert.deepEqual(lines, [`node ~/.fcwm/app/scripts/fcwm.mjs run ${quoteSh(VOLUME)}`]);
+});
+
+test('cloud: a temporary repository per render, deleted after the download; --public on request', () => {
+  assert.equal(tempRepoName('Mój Film!', new Date('2026-11-01T16:40:05Z')), 'fcwm-render-m-j-film-20261101-164005');
+  const film = { dir: '/f/x', slug: 'x', renderDir: '/f/x/render' };
+  const plan = cloudPlan({ film, visibility: 'public' }).join('\n');
+  assert.match(plan, /gh repo create <you>\/fcwm-render-x-\d{8}-\d{6} --public/);
+  assert.match(plan, /gh repo delete/);
+  const kept = cloudPlan({ film, repo: 'renders' }).join('\n');
+  assert.match(kept, /--private .*it is kept/);
+  assert.doesNotMatch(kept, /gh repo delete/);
+  assert.equal(handoffCommand({ folder: '/a b', os: 'macos', first: false, cloud: true, public: true }),
+    `node ~/.fcwm/app/scripts/fcwm.mjs run ${quoteSh('/a b')} --cloud --public`);
+});
+
+test('run summary: paste-friendly block with failed checks, files and the error', async () => {
+  const { runSummary } = await import('../lib/summary.mjs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcwm-sum-'));
+  const renderDir = path.join(dir, 'render');
+  fs.mkdirSync(renderDir);
+  fs.writeFileSync(path.join(renderDir, 'f-9x16.mp4'), '');
+  fs.writeFileSync(path.join(renderDir, 'qa.json'), JSON.stringify({ videos: [{ file: 'f-9x16.mp4', loudness: { pass: true },
+    composition: { motion: { pass: false }, fill: { pass: true, skipped: 'x' } } }] }));
+  const s = runSummary({ version: '1.0.0', os: 'macOS', args: ['run', dir], films: [{ slug: 'f', renderDir }], qaFailed: true, next: 'n' });
+  assert.match(s, /^----- FCWM summary/);
+  assert.match(s, /FAIL motion: the picture stands still/);
+  assert.doesNotMatch(s, /FAIL fill|FAIL loudness/);
+  assert.match(s, /files: .*f-9x16\.mp4/);
+  assert.match(s, /result: rendered, but QA FAILED/);
+  assert.match(runSummary({ version: '1', os: 'Linux', args: ['run'], error: new Error('folder not found: /x\nmore') }), /result: FAILED: folder not found: \/x \| more/);
 });

@@ -31,11 +31,26 @@ What happens:
 1. FCWM installs `git` and the GitHub CLI (`gh`) if they are missing.
 2. The first time, `gh auth login` opens your browser: log in with **your** GitHub account. The login
    stays on your computer (in `gh`); FCWM stores no token.
-3. FCWM creates the private repository `<you>/fcwm-renders` if it does not exist (`--repo <name>` picks
-   another name), copies the film's source into `films/<film>/` (not `render/` or `.fcwm/`), adds the
+3. FCWM creates a temporary repository `<you>/fcwm-render-<film>-<time>` (private; `--public` makes it
+   public), copies the film's source into `films/<film>/` (not `render/` or `.fcwm/`), adds the
    workflow `.github/workflows/fcwm-render.yml` and pushes.
-4. It starts the workflow, shows its progress, and when it finishes downloads the MP4s, the phone
-   preview, contact sheets and `qa.json` into your film folder's `render/`.
+4. It starts the workflow, shows its progress, and when it finishes downloads the MP4s, contact
+   sheets and `qa.json` into your film folder's `render/`.
+5. It deletes the temporary repository, so nothing of the render stays on GitHub. The first time, `gh`
+   asks in the browser for permission to delete repositories (`delete_repo`). If the render fails, the
+   repository is kept so you can read the log, and FCWM prints `gh repo delete <you>/<name> --yes`.
+
+Minutes and privacy:
+
+- **Private (default):** only you see the film. GitHub Free includes 2,000 Actions minutes a month
+  (Pro and Team 3,000); a 2-D film takes about 1-3 minutes, a 3-D film 5-10 or more.
+- **Public (`--cloud --public`):** Actions minutes on GitHub's standard machines are free and
+  unlimited ([GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions)),
+  but anyone can see the film's files and the render while the repository exists (a few minutes).
+  Not for unreleased client work.
+- `--repo <name>` uses one named repository instead and keeps it (created private, or public with
+  `--public`); FCWM deletes only the run's download package, which counts toward your 500 MB of
+  Actions storage.
 
 Next time, the short command with `--cloud` does the same without any setup:
 
@@ -56,7 +71,7 @@ node ~/.fcwm/app/scripts/fcwm.mjs run '/path/to/my-film' --cloud
 5. Run it: Actions tab > fcwm-render > Run workflow, enter the folder name (`my-film`), pick `full`
    (video) or `check` (contact sheets only), Run workflow.
 6. When the run shows a green tick, open it and download the artifact `my-film-render` (a zip with the
-   MP4s, preview, contact sheets and `qa.json`). Unzip it into your film folder's `render/`.
+   MP4s, contact sheets and `qa.json`). Unzip it into your film folder's `render/`.
 
 For the next film, repeat steps 4 to 6 in the same repository.
 

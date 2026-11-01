@@ -59,15 +59,22 @@ ff([...inputs, '-filter_complex', graph, '-map', '[out]', '-c:a', 'pcm_f32le', '
 
 // ---------------- master: gain -> 4x oversampled limiter -> measure -> correct
 const master = path.join(A, 'mix.wav');
-let gain = TARGET - loudness(pre).I, m;
-for (let i = 0; i < 6; i++) {
-  ff(['-i', pre, '-af', `volume=${gain.toFixed(3)}dB,aresample=192000,alimiter=limit=${10 ** (CEIL_DB / 20)}:attack=1:release=60:level=0:asc=1:latency=1,aresample=48000`,
+// FCWM: loudness and true peak are measured on the AAC the film is delivered in, not on the WAV:
+// the encoder adds inter-sample peaks (up to ~2 dB on dense mixes), so the ceiling drops until it holds.
+let gain = TARGET - loudness(pre).I, m, ceil = CEIL_DB;
+const probeAac = path.join(A, '_probe.m4a');
+for (let i = 0; i < 8; i++) {
+  ff(['-i', pre, '-af', `volume=${gain.toFixed(3)}dB,aresample=192000,alimiter=limit=${10 ** (ceil / 20)}:attack=1:release=60:level=0:asc=1:latency=1,aresample=48000`,
     '-c:a', 'pcm_s24le', '-ar', '48000', master]);
-  m = loudness(master);
-  if (Math.abs(m.I - TARGET) <= 0.1) break;
-  gain += TARGET - m.I;
+  ff(['-i', master, '-c:a', 'aac', '-b:a', '320k', probeAac]);
+  m = loudness(probeAac);
+  const loudOk = Math.abs(m.I - TARGET) <= 0.2, peakOk = m.TP <= -1.1;
+  if (loudOk && peakOk) break;
+  if (!peakOk) ceil -= m.TP + 1.2;
+  if (!loudOk) gain += TARGET - m.I;
 }
 fs.rmSync(pre);
+fs.rmSync(probeAac, { force: true });
 console.log(`mix: ${stems.map((s) => `${s.k} ${s.db >= 0 ? '+' : ''}${s.db} dB`).join(', ')}${has('vo') && has('music') ? ', music ducked under vo' : ''}`);
 console.log(`master: ${m.I.toFixed(1)} LUFS integrated, true peak ${m.TP.toFixed(1)} dBTP -> ${path.relative(ROOT, master)}`);
 if (Math.abs(m.I - TARGET) > 0.3 || m.TP > -1.0) console.log('WARNING: loudness/peak outside spec; check the stems for a runaway level');

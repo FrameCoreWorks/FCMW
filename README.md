@@ -8,14 +8,14 @@ Claude apps, Codex, ChatGPT, Cursor, Gemini CLI and others. It brings no brand a
 You set the direction; FCWM brings the workshop: engines, a production method, quality control and
 rendering.
 
-> **Status: 0.3.0.** Four engines render end to end: HyperFrames (2-D, the default, also plays Lottie
-> and animated SVG), motion-reel (3-D, generative, synthesized sound), Manim (equations, graphs,
-> technical explainers) and Blender (photoreal 3-D with Cycles; GPL, tier restricted), driven by one
+> **Status: 0.3.0.** Established open engines render end to end: HyperFrames (the default: 2-D, 3-D with
+> three.js, synthesized music, Lottie and animated SVG), Manim (equations, graphs, technical
+> explainers) and Blender (photoreal 3-D with Cycles; GPL, tier restricted), driven by one
 > cross-platform command with automated quality checks, extra formats (GIF, WebM, ProRes, transparent
 > ProRes 4444 / WebM), optional brand kits, tested film blocks (transitions, titles, lower thirds,
 > captions, end cards) and a one-line installer that sets up the whole render toolkit and renders a film
 > folder on any computer. Tested end to end on Linux (CI), Windows (CI) and an Apple M4 Mac; path-traced
-> 3-D is the one experimental mode.
+> 3-D (through the vendored motion-reel toolkit, on request only) is the one experimental mode.
 
 ## Why code
 
@@ -26,7 +26,7 @@ productions: so that smaller models can make films close to what the strongest m
 
 ## What it will do
 
-- **Picks the engine for the job** (motion-reel, HyperFrames, Manim, Blender, Lottie/SVG, audio
+- **Picks the engine for the job** (HyperFrames with three.js, Manim, Blender, Lottie/SVG, audio
   synthesis and more) and tells you its licence tier first.
 - **Two ways to work:** quick mode (idea to film) or the full process (brief, shot list, key frames,
   review rounds, render).
@@ -103,13 +103,13 @@ npx playwright install chromium
 node scripts/fcwm.mjs doctor
 ```
 
-Then, from any folder (Node 22+ and FFmpeg required; `uv` only for motion-reel scores in Python):
+Then, from any folder (Node 22+ and FFmpeg required; `uv` only for synthesized scores in Python):
 
 ```sh
 node <path-to-FCWM>/scripts/fcwm.mjs new my-film              # HyperFrames, 9:16, 15 s
-node <path-to-FCWM>/scripts/fcwm.mjs new my-3d --engine motion-reel --3d
+node <path-to-FCWM>/scripts/fcwm.mjs new my-3d --3d --score     # three.js scene + synthesized score
 node <path-to-FCWM>/scripts/fcwm.mjs render my-film --check   # contact sheets in my-film/render/
-node <path-to-FCWM>/scripts/fcwm.mjs render my-film           # MP4, phone preview, QA report
+node <path-to-FCWM>/scripts/fcwm.mjs render my-film           # final MP4 and QA report
 ```
 
 Your agent has no terminal? It hands you one film folder and one line to paste, which installs only

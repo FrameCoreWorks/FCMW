@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+- `fcwm render` goes straight to the final film; the phone preview is made only with `--preview`.
+- Loudness is measured on the delivered AAC, not the WAV: AAC adds inter-sample peaks (a real 24 s film
+  went from -1.3 to -0.8 dBTP), so the limiter ceiling drops until the delivered file holds -1 dBTP
+  (HyperFrames mix and the motion-reel mixer).
+- Beginner and expert levels next to quick and full mode: beginners get one step at a time in plain
+  words and paste the Terminal output back; `fcwm run` ends with a short summary block made for that
+  (each film's QA result and fixes, file paths, the error, the next step).
+- Established engines first: 3-D now runs in HyperFrames with three.js (`fcwm new --3d`, MIT, copied
+  into the film or added at render time), and music-driven films get a synthesized score in HyperFrames
+  (`--score`: `beats.json` plus `audio/score.py`; `fcwm render` runs it and mixes `audio/` to -14 LUFS /
+  -1 dBTP under the picture). motion-reel (a small vendored toolkit) is offered only on request or for
+  its experimental path tracing, and is never called an FCWM engine.
+- Chat hand-off: two replies (the ZIP link and the questions first, the commands only after the user
+  pasted the real path), the first-time command when unsure, and one folder per requested format.
+- Composition checks in every full render and `fcwm qa` (`qa/composition.mjs`): an empty first frame,
+  9:16 content that is small or sits high, scenes copied 3 s apart, and a picture that stands still
+  (1.5 s or 40 % of the film). Each FAIL prints its fix; `film.json` `allowEmptyStart`, `allowRepeats`,
+  `allowStill` or `composition: false` opt out. Calibrated on the 0.4.0 eval films.
+- Skills: five first-draft rules tied to those checks (hook on frame 0, fill 9:16, every scene new,
+  always moving, sound).
+- GitHub Actions render (`--cloud`): a temporary repository per render, deleted after the download
+  (asks once for the `delete_repo` permission); a failed render keeps it for its log. `--public` uses a
+  public repository (free Actions minutes, visible while it exists); `--repo <name>` keeps one named
+  repository and deletes only the run's artifact.
+- Chat apps hand over the film as a direct ZIP download link, never a pointer to a file library.
 - Mac test fixes (Apple M4, 2026-11-01):
   - The one-line installer sets up the whole render toolkit on the first run (`fcwm run --full`):
     FFmpeg, uv, Chromium, HyperFrames and its Chrome, Manim and Blender's bpy (Pango on Linux), each

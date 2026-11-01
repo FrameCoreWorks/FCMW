@@ -20,7 +20,7 @@ animates only with keyframes and drivers, so every frame is computed from its fr
 | `fcwm new <name> --engine blender [--alpha]` | copies `templates/blender-blank` (`scene.py`, `film.json`) |
 | `fcwm render <film> --check` | the beat-grid frames only, half size, 8 samples, tiled into contact sheets |
 | `fcwm render <film> --at 1,2` | those frames at full size and the film's samples, into `render/stills/` |
-| `fcwm render <film>` | every frame into `<film>/.blender/<format>/`, encoded to H.264 yuv420p (CRF 16, faststart), preview, QA |
+| `fcwm render <film>` | every frame into `<film>/.blender/<format>/`, encoded to H.264 yuv420p (CRF 16, faststart), QA |
 | `--export mov-alpha` / `webm-alpha` | the same RGBA frames (film.json `"alpha": true`) to ProRes 4444 / VP9 with alpha |
 
 Render settings (film.json): `samples` (64), `seed` (1), `denoise` (true), `gpu` (true: Metal, OptiX,

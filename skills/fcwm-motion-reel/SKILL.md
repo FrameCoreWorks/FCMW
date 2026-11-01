@@ -19,7 +19,7 @@ Run commands from the folder that holds the films. The render contract is in
 <film>/index.html  fonts + canvas;  film.js  the film;  lib/motion.js  harness + springs
 <film>/beats.json  the grid everything is timed on (fcwm new writes a steady 120 BPM grid)
 <film>/audio/      score.py (optional), music.wav, sfx.wav, mix.wav
-<film>/render/     delivered files: <film>-<format>.mp4, <film>-preview.mp4, contact sheets, qa.json
+<film>/render/     delivered files: <film>-<format>.mp4, contact sheets, qa.json (<film>-preview.mp4 with --preview)
 ```
 
 ## Commands
@@ -29,7 +29,7 @@ Run commands from the folder that holds the films. The render contract is in
 | New film | `node <repo>/scripts/fcwm.mjs new <film> --engine motion-reel [--3d \| --pathtrace] [--format 9x16,16x9] [--duration 15] [--bpm 120]` |
 | Contact sheet, one frame per beat | `node <repo>/scripts/fcwm.mjs render <film> --check` |
 | Stills | `node <repo>/scripts/fcwm.mjs render <film> --at 3.2,7.5` |
-| Full render, mix, preview, QA | `node <repo>/scripts/fcwm.mjs render <film>` |
+| Full render, mix and QA (`--preview` adds a phone preview) | `node <repo>/scripts/fcwm.mjs render <film>` |
 | Determinism check | `node <repo>/scripts/fcwm.mjs qa <film> --determinism` |
 
 Engine scripts for finer work (run from the films folder): `node <engine>/scripts/render.mjs --film <film>`
@@ -73,7 +73,7 @@ soft pad on the film's grid; copy it to `<film>/audio/score.py`). Lyric videos o
    readability at phone size, motion quality, variety, brief fit, sound sync. Fix the worst three, append
    the round to `docs/critique.md`, repeat until every score is 8 or more.
 8. **Render and deliver.** `fcwm render <film>` renders every format, adds sound effects, masters to
-   -14 LUFS / -1 dBTP, writes the phone preview and runs QA. Report the QA result as it is, give the
+   -14 LUFS / -1 dBTP, and runs QA. Report the QA result as it is, give the
    paths in `<film>/render/` and the last scores, and name the next improvements concretely.
 
 ## Rules that bite
