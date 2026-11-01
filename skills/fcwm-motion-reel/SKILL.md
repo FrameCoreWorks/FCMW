@@ -26,7 +26,7 @@ Run commands from the folder that holds the films. The render contract is in
 
 | Step | Command |
 | --- | --- |
-| New film | `node <repo>/scripts/fcwm.mjs new <film> --engine motion-reel [--3d] [--format 9x16,16x9] [--duration 15] [--bpm 120]` |
+| New film | `node <repo>/scripts/fcwm.mjs new <film> --engine motion-reel [--3d \| --pathtrace] [--format 9x16,16x9] [--duration 15] [--bpm 120]` |
 | Contact sheet, one frame per beat | `node <repo>/scripts/fcwm.mjs render <film> --check` |
 | Stills | `node <repo>/scripts/fcwm.mjs render <film> --at 3.2,7.5` |
 | Full render, mix, preview, QA | `node <repo>/scripts/fcwm.mjs render <film>` |
@@ -54,8 +54,9 @@ with `--strip a:b:8 --name <cut>` (frames across a transition), `--range a:b` (a
    row per shot. Stop for the user's OK. Show a model sheet first if the film has a character.
 6. **Build `film.js`.** Time everything in beats (`u`). Springs: `springU`, `springKeys`, `SPRING`
    presets; `kf` for eased keys, `wobble`, `shake`. Layout per format: `FORMAT.pick`, `FORMAT.safe`.
-   Per-glyph type: `layout`, `glyph`. Real screenshots: `cover`, `crop`. 3-D: `--3d`, `npm i three`,
-   `lib/gl.js` and `references/3d.md`. Grain and glitch go in `post()`, after the motion-blur average.
+   Per-glyph type: `layout`, `glyph`. Real screenshots: `cover`, `crop`. 3-D: `--3d`, `lib/gl.js` and
+   `references/3d.md`; physically based light (path traced, slow, offer it first): `--pathtrace`,
+   `lib/pathtrace.js` and `references/pathtrace.md`. Grain and glitch go in `post()`, after the motion-blur average.
    List every accent in `HITS` as `[beat, label, sfx, opts]` so sound and picture share one source.
    FCWM's tested blocks in `<repo>/lib/` (cursor paths, point-cloud morphs, cameras, dialogue timing,
    characters) import straight into `film.js`.
@@ -73,5 +74,7 @@ with `--strip a:b:8 --name <cut>` (frames across a transition), `--range a:b` (a
   `film.json` `allowBlank: [[from, to]]`, or QA fails it.
 - Zooms in log space (`s = a * (b / a) ** p`); whips keep both shots on screen.
 - Check every non-Latin character exists in both faces (opentype.js `charToGlyphIndex`).
+- A path-traced film: render one still (`--at`) and quote its measured time before a full render; check
+  sheets use `pathtrace.checkSpp`; GitHub Actions has no GPU, so only low-sample test frames there.
 - Software WebGL (SwiftShader, printed at render start) is about 80x slower for 3-D. On a machine without
   a GPU, render 3-D in short ranges or on a GPU machine.

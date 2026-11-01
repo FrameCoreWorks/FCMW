@@ -14,6 +14,8 @@
 //   ... --poster [t]        one still at t (default: film.json "poster") -> out/<film>/poster.png
 //
 // Flags: --fps 60  --workers 6  --noblur  --keep (also write the PNG frames)  --cpu | --gpu
+//        path-traced films (film.json "pathtrace"): --spp N (samples per pixel)  --pt-scale 0.5 (trace
+//        at a fraction of the size)  --draft (rasterise instead); one worker by default, the GPU is the limit
 //        --format 9x16  16x9 (1920x1080, default) | 9x16 (1080x1920) | 1x1 (1080x1080). The page gets
 //                       ?format=&w=&h= and lays itself out; outputs other than 16x9 get a _<format> suffix.
 //
@@ -29,6 +31,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { loadChromium } from './pw.mjs';
 
 const chromium = await loadChromium();
@@ -56,11 +59,14 @@ if (!FORMATS[FORMAT]) {
 const [W, H] = FORMATS[FORMAT];
 const SUF = FORMAT === '16x9' ? '' : `_${FORMAT}`;
 const FPS = Number(opt('fps', 60));
-const WORKERS = Number(opt('workers', 6));
-const BLUR = !flag('noblur');
-
 const cfgPath = path.join(FILM_DIR, 'film.json');
 const CFG = fs.existsSync(cfgPath) ? JSON.parse(fs.readFileSync(cfgPath, 'utf8')) : {};
+// path tracing saturates the GPU: parallel pages only queue on it (and each compiles its own shaders)
+const PATHTRACE = Boolean(CFG.pathtrace);
+const WORKERS = Number(opt('workers', PATHTRACE ? 1 : 6));
+const SPP = opt('spp', null), PT_SCALE = opt('pt-scale', null), DRAFT = flag('draft');
+const BLUR = !flag('noblur');
+
 const DURATION = Number(CFG.duration || 15);
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript',
@@ -70,10 +76,21 @@ const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/jav
   '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.bin': 'application/octet-stream', '.glb': 'model/gltf-binary',
   '.hdr': 'application/octet-stream', '.exr': 'application/octet-stream' };
 
+// three.js and the path tracer resolve from the films folder's node_modules first, then from the
+// FCWM install's (npm ci there brings the pinned versions), so a 3-D film needs no npm step of its own
+const FCWM_MODULES = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'node_modules');
+function resolveFile(pathname) {
+  const p = path.join(ROOT, pathname);
+  if (pathname.startsWith('/node_modules/') && !fs.existsSync(p)) {
+    const q = path.join(FCWM_MODULES, pathname.slice('/node_modules/'.length));
+    if (q.startsWith(FCWM_MODULES) && fs.existsSync(q)) return { p: q, ok: true };
+  }
+  return { p, ok: p.startsWith(ROOT) };
+}
 function serve() {
   const server = http.createServer((req, res) => {
-    const p = path.join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname));
-    if (!p.startsWith(ROOT) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) {
+    const { p, ok } = resolveFile(decodeURIComponent(new URL(req.url, 'http://x').pathname));
+    if (!ok || !fs.existsSync(p) || fs.statSync(p).isDirectory()) {
       res.writeHead(404); res.end(); return;
     }
     res.writeHead(200, { 'Content-Type': MIME[path.extname(p).toLowerCase()] || 'application/octet-stream' });
@@ -97,7 +114,8 @@ async function openPages(browser, url, n) {
     page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) console.error('[console]', m.text()); });
     await page.goto(url);
     // 3-D films build their sets in init(): give them time
-    await page.waitForFunction(() => window.filmReady === true, null, { timeout: 120000 });
+    // (a path-traced film also compiles its tracer and traces frame 0 here: minutes in software GL)
+    await page.waitForFunction(() => window.filmReady === true, null, { timeout: PATHTRACE ? 1800000 : 120000 });
     return page;
   }));
 }
@@ -138,7 +156,7 @@ async function streamFrames(pages, f0, f1, ff, keepDir) {
       if (keepDir) fs.writeFileSync(path.join(keepDir, `${String(f0 + nextWrite).padStart(5, '0')}.png`), buf);
       nextWrite++;
       if (!ff.stdin.write(buf)) await new Promise((r) => ff.stdin.once('drain', r));
-      if (nextWrite % 120 === 0) {
+      if (nextWrite % (PATHTRACE ? 2 : 120) === 0) {   // path tracing: seconds per frame, report often
         const rate = nextWrite / ((Date.now() - t0) / 1000);
         process.stdout.write(`\r  ${nextWrite}/${n} frames  ${rate.toFixed(1)} fps  eta ${((n - nextWrite) / rate / 60).toFixed(1)} min   `);
       }
@@ -190,7 +208,8 @@ const gpuArgs = process.platform === 'darwin'
   : ['--enable-gpu', '--ignore-gpu-blocklist'];
 const server = await serve();
 const url = `http://127.0.0.1:${server.address().port}/${FILM}/index.html` +
-  `?render=1&blur=${BLUR ? 1 : 0}&fps=${FPS}&format=${FORMAT}&w=${W}&h=${H}`;
+  `?render=1&blur=${BLUR ? 1 : 0}&fps=${FPS}&format=${FORMAT}&w=${W}&h=${H}` +
+  (SPP ? `&spp=${Number(SPP)}` : '') + (PT_SCALE ? `&ptscale=${Number(PT_SCALE)}` : '') + (DRAFT ? '&ptdraft=1' : '');
 const browser = await chromium.launch({ args: ['--font-render-hinting=none', '--disable-lcd-text', ...(GPU ? gpuArgs : [])] });
 const rel = (p) => path.relative(ROOT, p);
 async function reportGL(page) {
@@ -288,6 +307,7 @@ try {
     const keepDir = flag('keep') ? path.join(OUT, `frames${SUF}`) : null;
     if (keepDir) { fs.rmSync(keepDir, { recursive: true, force: true }); fs.mkdirSync(keepDir, { recursive: true }); }
     console.log(`rendering ${f1 - f0} frames (${ra}-${(f1 / FPS).toFixed(2)}s) ${W}x${H} @ ${FPS}fps, ${WORKERS} workers, motion blur ${BLUR ? 'on' : 'off'}`);
+    if (PATHTRACE && !DRAFT) console.log(`path traced: ${SPP || CFG.pathtrace.spp || 256} samples per pixel; the eta below is measured, not guessed`);
     const pages = await openPages(browser, url, WORKERS);
     await reportGL(pages[0]);
     const t0 = Date.now();
