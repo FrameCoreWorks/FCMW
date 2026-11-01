@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "fcwm",
   "description": "Motion graphics as code for any AI agent. 2D, 3D and audio films written as deterministic code and rendered on your own machine or in GitHub Actions. Picks the engine for the job, runs a quick or a full production process, checks quality and exports every format. Brand-neutral: you set the direction.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": { "name": "FCWM contributors" },
   "homepage": "https://github.com/FrameCoreWorks/FCWM",
   "repository": "https://github.com/FrameCoreWorks/FCWM",

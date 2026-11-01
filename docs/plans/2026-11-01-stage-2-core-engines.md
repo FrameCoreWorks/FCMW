@@ -127,7 +127,7 @@ Outputs land in `<film>/render/` (`<film>-<format>.mp4`, `<film>-preview.mp4`, `
 
 ### Task 7: GitHub Actions render
 
-**Files:** Create `.github/workflows/render.yml`, `.github/workflows/smoke.yml`; update `docs/` with `render-in-the-cloud.md`.
+**Files:** Create `.github/workflows/render.yml`, `.github/workflows/smoke.yml`; add `docs/render-in-github-actions.md`.
 
 - `render.yml`: `workflow_dispatch` with input `film` (path); ubuntu, node 22, ffmpeg, `npx playwright install --with-deps chromium`, `uv`, runs `node scripts/fcwm.mjs render $film`, uploads `<film>/render/` as artifact.
 - `smoke.yml` on PR: scaffold one film per engine, render `--check` (motion-reel) and a 2 s full render (HyperFrames), run QA.

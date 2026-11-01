@@ -1,0 +1,51 @@
+name: render
+
+# Render a film that is committed to this repository (or your fork) on GitHub's machines.
+# Actions tab > render > Run workflow, enter the film folder (for example films/my-film).
+# The finished files are attached to the run as an artifact named after the film.
+on:
+  workflow_dispatch:
+    inputs:
+      film:
+        description: Film folder, relative to the repository root
+        required: true
+      mode:
+        description: full (video, mix, preview, QA) or check (contact sheets only)
+        type: choice
+        options: [full, check]
+        default: full
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: astral-sh/setup-uv@v6
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Render
+        env:
+          FILM: ${{ inputs.film }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$MODE" = "check" ]; then node scripts/fcwm.mjs render "$FILM" --check; else node scripts/fcwm.mjs render "$FILM"; fi
+      - name: Artifact name
+        id: name
+        env:
+          FILM: ${{ inputs.film }}
+        run: echo "name=$(basename "$FILM")" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ steps.name.outputs.name }}-render
+          path: ${{ inputs.film }}/render/
+          if-no-files-found: warn
