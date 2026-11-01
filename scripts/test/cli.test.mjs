@@ -378,7 +378,7 @@ test('hyperframes: a hand-off film that imports ./lib/fcwm/ without carrying it 
   assert.equal(fill.when(), false);
 });
 
-test('hyperframes --3d and --score: three.js copied, beat grid and score starter, score and mix steps planned', async () => {
+test('hyperframes --3d and --score: three.js copied, beat grid and score starter, score and mix steps planned', { skip: !fs.existsSync(new URL('../../node_modules/three/build/three.module.js', import.meta.url)) && 'three.js not installed (npm ci)' }, async () => {
   const hf = await loadAdapter('hyperframes');
   const root = tmp();
   const [step] = hf.scaffoldSteps(root, 'td', { duration: 6, formats: ['9x16'], threeD: true, score: true, bpm: 100 });
@@ -409,7 +409,7 @@ test('master: audio/ stems mixed to -14 LUFS under the picture', { skip: spawnSy
   const v = path.join(dir, 'v.mp4');
   spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=s=320x240:r=30', '-t', '4', '-pix_fmt', 'yuv420p', v]);
   spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'sine=f=220:d=4', '-af', 'volume=0.05', '-ac', '2', path.join(dir, 'audio', 'music.wav')]);
-  spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'anoisesrc=d=0.3:a=0.3', '-ac', '2', path.join(dir, 'audio', 'sfx.wav')]);
+  spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'anoisesrc=d=0.3:a=0.3:seed=1', '-ac', '2', path.join(dir, 'audio', 'sfx.wav')]);
   assert.equal(stemsIn(dir).length, 2);
   assert.ok(masterInto(v, stemsIn(dir)));
   const r = loudness(v);

@@ -27,6 +27,7 @@ import { parseExports, exportSteps, exportPath, EXPORTS } from './lib/export.mjs
 import { listKits, initKit, loadKit, checkKit, applyKit, kitDir, kitsDir } from './lib/brand.mjs';
 import { checkVideo, determinism, summarize, alphaChannel, probe } from '../qa/checks.mjs';
 import { videoComposition } from '../qa/composition.mjs';
+import { runSummary } from './lib/summary.mjs';
 import { requirementsFor, ensure, detect, readState, statePath, fcwmHome, FULL, chromiumPath } from './lib/setup.mjs';
 import { handoffCommand, normalizeOs } from './lib/handoff.mjs';
 import { cloudRender, cloudPlan } from './lib/cloud.mjs';
@@ -51,7 +52,17 @@ export async function main(argv, { cwd = process.cwd(), log = console.log } = {}
   if (cmd === 'new') return newFilm(target, a, cwd, log);
   if (cmd === 'render') return render(target, a, cwd, log);
   if (cmd === 'qa') return qa(target, a, cwd, log);
-  if (cmd === 'run') return runFolder(target, a, cwd, log);
+  if (cmd === 'run') {
+    // a paste-friendly summary last, success or not (users copy it back into the chat)
+    let films = [], code, error;
+    try { films = target ? filmsIn(target, cwd) : []; } catch { /* runFolder reports it */ }
+    try { code = await runFolder(target, a, cwd, log); } catch (e) { error = e; }
+    if (!a['dry-run']) log(`\n${runSummary({ version: VERSION, os: { darwin: 'macOS', win32: 'Windows' }[process.platform] || 'Linux', args: argv, films,
+      error, qaFailed: !error && !!code,
+      next: error || code ? 'paste this summary to your agent (or fix what FAILED says), then run the same command again' : 'open the files above; paste this summary to your agent for the review' })}`);
+    if (error) throw error;
+    return code;
+  }
   if (cmd === 'setup') return setup(target, a, cwd, log);
   if (cmd === 'command') return command(target, a, cwd, log);
   if (cmd === 'brand') return brand(target, a._[2], log);
@@ -76,7 +87,7 @@ async function doctor(log) {
   const r = checkTools(['ffmpeg', 'ffprobe', 'npx', 'uv']);
   for (const n of ['ffmpeg', 'ffprobe', 'npx', 'uv']) {
     const m = r.missing.find((x) => x.name === n);
-    log(m ? `${n === 'uv' ? 'opt ' : 'FAIL'} ${n}: ${m.hint}${n === 'uv' ? ' (only for motion-reel scores written in Python)' : ''}` : `ok   ${n}`);
+    log(m ? `${n === 'uv' ? 'opt ' : 'FAIL'} ${n}: ${m.hint}${n === 'uv' ? ' (only for synthesized scores written in Python)' : ''}` : `ok   ${n}`);
   }
   const pw = await hasPlaywright([process.cwd(), REPO]);
   const chrome = pw && chromiumPath([process.cwd(), REPO]);

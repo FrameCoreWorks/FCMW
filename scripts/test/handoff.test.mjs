@@ -155,3 +155,20 @@ test('cloud: a temporary repository per render, deleted after the download; --pu
   assert.equal(handoffCommand({ folder: '/a b', os: 'macos', first: false, cloud: true, public: true }),
     `node ~/.fcwm/app/scripts/fcwm.mjs run ${quoteSh('/a b')} --cloud --public`);
 });
+
+test('run summary: paste-friendly block with failed checks, files and the error', async () => {
+  const { runSummary } = await import('../lib/summary.mjs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fcwm-sum-'));
+  const renderDir = path.join(dir, 'render');
+  fs.mkdirSync(renderDir);
+  fs.writeFileSync(path.join(renderDir, 'f-9x16.mp4'), '');
+  fs.writeFileSync(path.join(renderDir, 'qa.json'), JSON.stringify({ videos: [{ file: 'f-9x16.mp4', loudness: { pass: true },
+    composition: { motion: { pass: false }, fill: { pass: true, skipped: 'x' } } }] }));
+  const s = runSummary({ version: '1.0.0', os: 'macOS', args: ['run', dir], films: [{ slug: 'f', renderDir }], qaFailed: true, next: 'n' });
+  assert.match(s, /^----- FCWM summary/);
+  assert.match(s, /FAIL motion: the picture stands still/);
+  assert.doesNotMatch(s, /FAIL fill|FAIL loudness/);
+  assert.match(s, /files: .*f-9x16\.mp4/);
+  assert.match(s, /result: rendered, but QA FAILED/);
+  assert.match(runSummary({ version: '1', os: 'Linux', args: ['run'], error: new Error('folder not found: /x\nmore') }), /result: FAILED: folder not found: \/x \| more/);
+});

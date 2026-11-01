@@ -166,6 +166,12 @@ same in the browser: `docs/render-in-github-actions.md` in the FCWM repository, 
 
 ## 6. After the render
 
+Every `fcwm run` ends with a short block between `----- FCWM summary: copy from here into the chat -----`
+and `----- end of summary -----`: the FCWM version and system, each film's QA result with every failed
+check, where the files are, the error if the run stopped, and the next step. Ask the user to copy that
+block (or, for a beginner, everything the window shows if they cannot find it) and paste it into the
+chat. Read it as `skills/fcwm` section 1 says ("Pasted Terminal output").
+
 Ask the user to send back, or let you read, `<path>/render/qa.json` and the contact sheets
 (`contact_*.png`). Score them as the quality gate says; if the user must score, give them the six
 categories. Report every FAIL in `qa.json` as it is.

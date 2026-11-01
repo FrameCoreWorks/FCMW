@@ -17,9 +17,22 @@ the engine specifics. `<repo>` is the FCWM root, two levels above this file. Eve
 The user sets the creative direction. Never add a brand, palette, typeface or style the user did not
 ask for. If the brief is silent on look, ask, or offer two or three neutral options and let them pick.
 
-## 1. Choose the mode
+## 1. Choose the level and the mode
 
-Ask once, at the start:
+Ask once, at the start, two short questions in one message (in the user's language):
+
+**Level** (how you talk and how much you explain):
+
+- **Beginner**: plain words, no jargon; one step and one command at a time; say where to click and
+  what the user should see. After every command ask the user to paste back what the Terminal (or
+  PowerShell) showed, ideally the block between `----- FCWM summary` and `----- end of summary -----`
+  that `fcwm run` prints last. Read it, say in one or two sentences what happened, and give exactly one
+  next step. Never paste a long log back; never give two commands at once.
+- **Expert**: short and complete: all commands at once, the options (`--check`, `--cloud --public`,
+  `--repo`, `--export`), engine and tier in one line each, no explanation of basics. Read pasted output
+  the same way, but answer in a line.
+
+**Mode** (how the work runs):
 
 - **Quick mode**: idea to finished film. Confirm the one-line idea, format and length, then build,
   run the quality gate yourself (as many rounds as it takes) and deliver. The user reviews once, at the end.
@@ -27,7 +40,16 @@ Ask once, at the start:
   `fcwm render <film> --at ...` (user signs off), build, review rounds, render, delivery in every
   requested format.
 
-If the user does not choose, use quick mode for films up to 15 seconds and the full process above that.
+If the user does not choose: beginner when they seem new to terminals or code (or say so), else expert;
+quick mode for films up to 15 seconds and the full process above that. Remember both for the whole
+conversation; the user can switch at any time.
+
+**Pasted Terminal output** (any level): find the summary block first. `result: OK`: the film is in the
+`files:` folder; ask for the contact sheet to review. `QA FAILED`: each `FAIL` line names the check;
+fix the film code, deliver the changed files and the same command again. `result: FAILED: ...`: explain
+the error in one sentence and give the one command or step that fixes it (a missing tool: the
+first-time command installs it; a wrong path: ask for the path again). No summary block: the run
+stopped early; read the last lines for the error.
 
 ## 2. Collect the brief
 

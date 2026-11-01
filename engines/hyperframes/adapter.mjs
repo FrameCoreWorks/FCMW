@@ -141,7 +141,7 @@ export default {
     const threeDir = path.join(film.dir, 'lib', 'three');
     const usesThree = () => /lib\/three\/three\.module\.js/.test(fs.readFileSync(path.join(film.dir, 'index.html'), 'utf8'));
     return [{ label: 'add FCWM lib (lib/fcwm/) the film imports', when: () => !fs.existsSync(libDir) && uses(), fn: () => copyLib(libDir) },
-      { label: `add three.js ${threeVersion()} (lib/three/) the film imports`, when: () => !fs.existsSync(path.join(threeDir, 'three.module.js')) && usesThree(), fn: () => copyThree(threeDir) },
+      { label: `add three.js${threeVersion() ? ` ${threeVersion()}` : ''} (lib/three/) the film imports`, when: () => !fs.existsSync(path.join(threeDir, 'three.module.js')) && usesThree(), fn: () => copyThree(threeDir) },
       ...steps];
   },
 

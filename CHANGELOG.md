@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Beginner and expert levels next to quick and full mode: beginners get one step at a time in plain
+  words and paste the Terminal output back; `fcwm run` ends with a short summary block made for that
+  (each film's QA result and fixes, file paths, the error, the next step).
 - Established engines first: 3-D now runs in HyperFrames with three.js (`fcwm new --3d`, MIT, copied
   into the film or added at render time), and music-driven films get a synthesized score in HyperFrames
   (`--score`: `beats.json` plus `audio/score.py`; `fcwm render` runs it and mixes `audio/` to -14 LUFS /
