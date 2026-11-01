@@ -36,15 +36,18 @@ Windows (PowerShell), the first time:
 
 It:
 
-1. checks Node.js 22+ and installs it if missing (Homebrew on macOS, winget on Windows; on Linux it
-   tells you how);
+1. checks Node.js 22+ and installs it if missing: the official build from nodejs.org into
+   `~/.fcwm/node` on macOS and Linux (no Homebrew and no administrator password needed), winget on
+   Windows (or the official zip when winget is missing);
 2. downloads FCWM into `~/.fcwm/app` (Windows: `%USERPROFILE%\.fcwm\app`), or updates it when a newer
    version is out;
-3. checks what this film needs (FFmpeg; Chromium for 3-D and canvas films; uv for a Python score;
-   HyperFrames fetches itself), installs only what is missing, renders, and runs the quality checks.
+3. checks what this film needs (FFmpeg; uv for a synthesized score; HyperFrames and its Chrome; Manim
+   or Blender's bpy module for those engines), installs only what is missing, renders, and runs the
+   quality checks. With a package manager (Homebrew, winget, apt) it uses it; without one, FFmpeg and
+   the GitHub CLI go into `~/.fcwm/bin` for your user only, checksum verified.
 
-The finished files are in `my-film/render/`: one MP4 per format, `my-film-preview.mp4` for the phone,
-and `qa.json` with the automated checks. Add `--check` at the end of the command to make only the
+The finished files are in `my-film/render/`: one MP4 per format, the contact sheets
+(`contact_*.png`) and `qa.json` with the automated checks. Add `--check` at the end of the command to make only the
 contact sheets (`contact_*.png`) for review.
 
 The folder may also be a project folder whose subfolders are films; each of them renders.
@@ -73,8 +76,18 @@ installs only that. If a film needs a newer FCWM, it says so: run the first-time
 - `node scripts/fcwm.mjs setup '<folder>'` (in `~/.fcwm/app`) lists what is installed and what the film
   still needs.
 - macOS: render from the Terminal app, not from inside a sandboxed agent session, which can block Chromium.
-- Windows: use PowerShell, not cmd. After winget installs Node.js, open a new PowerShell window if asked.
+- Windows: use PowerShell, not cmd. If it says Node.js cannot be seen yet, open a new PowerShell window
+  and paste the same command.
 - Linux: installing FFmpeg uses `sudo` (apt, dnf or pacman) and asks for your password.
 - Change where FCWM lives with the environment variable `FCWM_HOME`.
+
+## Update and remove
+
+- **Update:** run the first-time command again. It downloads FCWM only when a newer version is out and
+  skips everything else.
+- **Remove:** `node ~/.fcwm/app/scripts/fcwm.mjs uninstall` lists what would go; add ` --yes` to remove
+  FCWM, its Node.js and per-user tools (`~/.fcwm`) and the PATH line it added. Your brand kits stay
+  unless you add ` --all`. Caches other programs may share (uv, npx, Playwright) are listed with the
+  command to clear them, never deleted for you.
 
 No suitable computer: [render in GitHub Actions](render-in-github-actions.md) on your own GitHub account.

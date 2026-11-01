@@ -111,8 +111,10 @@ while (about 1 GB, mostly Blender); later runs skip everything already installed
 
 What the first-time command does:
 
-1. Checks Node.js 22+ and installs it when missing (Homebrew on macOS, winget on Windows; on Linux it
-   says how).
+1. Checks Node.js 22+ and installs it when missing: the official build from nodejs.org into
+   `~/.fcwm/node` on macOS and Linux (no Homebrew, no administrator password), winget on Windows (the
+   official zip when winget is missing). Tools without a package manager (FFmpeg, the GitHub CLI on a
+   Mac without Homebrew) go into `~/.fcwm/bin` the same way, checksum verified.
 2. Downloads FCWM into `~/.fcwm/app` (Windows: `%USERPROFILE%\.fcwm\app`), or updates it when a newer
    version is out. Skipped when it is already there.
 3. Runs `fcwm run --full '<path>'`: detects the whole render toolkit (FFmpeg, uv, Chromium for
@@ -138,6 +140,8 @@ How it works, so you answer questions correctly:
   it skips everything already installed.
 - If a film needs a newer FCWM than the one installed, the short command says so; give the first-time
   command again (it updates FCWM).
+- To remove FCWM: `node ~/.fcwm/app/scripts/fcwm.mjs uninstall` (lists), then the same with ` --yes`.
+  Brand kits stay unless ` --all`.
 
 ## 5. GitHub Actions (the second command)
 

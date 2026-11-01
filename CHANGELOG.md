@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Computers with nothing installed: the one-line installer puts the official Node.js 22 (nodejs.org,
+  SHA-256 checked) into `~/.fcwm/node` on macOS and Linux instead of requiring Homebrew, and adds
+  `~/.fcwm/bin` to the shell profile. On a Mac without Homebrew, FFmpeg 9.0 (Martin Riedl's signed
+  builds, GPL), uv (astral's installer) and the GitHub CLI install per user, and git through Apple's
+  Command Line Tools. On Windows without winget: Node.js from the official zip, FFmpeg from BtbN's
+  builds, uv from astral's installer; after winget, Node.js is found without a new window. No
+  administrator password anywhere. CI covers a bare macOS and a bare Windows (`mac-fresh`,
+  `windows-fresh`).
+- `fcwm uninstall [--yes] [--all]`: removes `~/.fcwm` and the PATH line, keeps brand kits unless
+  `--all`, and lists shared caches (uv, npx, Playwright) instead of deleting them.
+- npm's update notice no longer shows during install.
 - `fcwm render` goes straight to the final film; the phone preview is made only with `--preview`.
 - Loudness is measured on the delivered AAC, not the WAV: AAC adds inter-sample peaks (a real 24 s film
   went from -1.3 to -0.8 dBTP), so the limiter ceiling drops until the delivered file holds -1 dBTP

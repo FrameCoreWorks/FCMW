@@ -2,7 +2,7 @@
 #
 #   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/FrameCoreWorks/FCWM/main/scripts/install.ps1))) '<film folder>' [--cloud [--public]]
 #
-# 1. Checks Node.js 22+ (installs it with winget when missing).
+# 1. Checks Node.js 22+ (installs it with winget, or the official zip into ~\.fcwm\node without winget).
 # 2. Downloads FCWM into $HOME\.fcwm\app, or updates it when a newer version is out (FCWM_HOME moves it).
 # 3. Hands over to `fcwm run`, which installs only the tools this film still lacks and renders it
 #    into '<film folder>\render\'. With --cloud it renders on the user's own GitHub account instead.
@@ -29,11 +29,33 @@ function Node-Major {
 # --- Node.js 22+ ---------------------------------------------------------------------------
 if (-not (Get-Command node -ErrorAction SilentlyContinue) -or (Node-Major) -lt 22) {
   if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-    throw 'Node.js 22+ is missing and winget is not available. Install Node.js 22 from https://nodejs.org, then run the same command again.'
+    # No winget (Windows Server, LTSC): the official zip from nodejs.org into ~\.fcwm\node, checksum verified
+    $Arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'x64' }
+    $Base = 'https://nodejs.org/dist/latest-v22.x'
+    $Line = ((Invoke-RestMethod "$Base/SHASUMS256.txt") -split "`n") | Where-Object { $_ -match "-win-$Arch\.zip$" } | Select-Object -First 1
+    if (-not $Line) { throw "No Node.js 22 build for win-$Arch on nodejs.org." }
+    $Want, $File = ($Line.Trim() -split '\s+')
+    Say "installing Node.js $File into $HomeDir\node (no administrator rights needed)"
+    New-Item -ItemType Directory -Force -Path $HomeDir | Out-Null
+    $Zip = Join-Path $HomeDir $File
+    Invoke-WebRequest "$Base/$File" -OutFile $Zip -UseBasicParsing
+    if ((Get-FileHash $Zip -Algorithm SHA256).Hash.ToLower() -ne $Want) { Remove-Item $Zip; throw 'Node.js download is damaged (checksum mismatch); run the same command again.' }
+    $NodeHome = Join-Path $HomeDir 'node'
+    if (Test-Path $NodeHome) { Remove-Item $NodeHome -Recurse -Force }
+    Expand-Archive $Zip -DestinationPath $HomeDir
+    Move-Item (Join-Path $HomeDir ($File -replace '\.zip$', '')) $NodeHome
+    Remove-Item $Zip
+    $env:Path = "$NodeHome;$env:Path"
+    $UserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+    if (($UserPath -split ';') -notcontains $NodeHome) { [Environment]::SetEnvironmentVariable('Path', "$NodeHome;$UserPath", 'User') }
+  } else {
+    Say 'installing Node.js LTS with winget'
+    winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
+    Refresh-Path
+    # winget may finish before the new PATH reaches this window: look in the usual place directly
+    $NodeDir = Join-Path $env:ProgramFiles 'nodejs'
+    if ((Node-Major) -lt 22 -and (Test-Path (Join-Path $NodeDir 'node.exe'))) { $env:Path = "$NodeDir;$env:Path" }
   }
-  Say 'installing Node.js LTS with winget'
-  winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
-  Refresh-Path
   if ((Node-Major) -lt 22) { throw 'Node.js was installed but this window cannot see it yet. Open a new PowerShell window and run the same command again.' }
 } else {
   Say "already installed, skipping: Node.js $(node -v)"
@@ -70,7 +92,7 @@ if ($Have -and (-not $Want -or $Want -eq $Have) -and (Test-Path (Join-Path $App 
     }
     Push-Location $Unpacked
     # npm.cmd, not npm: the npm.ps1 shim is blocked by the default execution policy on Windows
-    try { npm.cmd ci --no-audit --no-fund --loglevel=error; if ($LASTEXITCODE) { throw "npm ci failed ($LASTEXITCODE)" } } finally { Pop-Location }
+    try { npm.cmd ci --no-audit --no-fund --no-update-notifier --loglevel=error; if ($LASTEXITCODE) { throw "npm ci failed ($LASTEXITCODE)" } } finally { Pop-Location }
     if (Test-Path $App) { Remove-Item $App -Recurse -Force }
     Move-Item $Unpacked $App
   } finally {
