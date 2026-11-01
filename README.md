@@ -49,20 +49,20 @@ The current list is in [`engines/catalog.json`](engines/catalog.json).
 Any agent, via the [skills](https://github.com/vercel-labs/skills) installer:
 
 ```sh
-npx skills add FrameCoreWorks/FCMW
+npx skills add FrameCoreWorks/FCWM
 ```
 
 Claude Code, as a plugin:
 
 ```text
-/plugin marketplace add FrameCoreWorks/FCMW
+/plugin marketplace add FrameCoreWorks/FCWM
 /plugin install fcwm@fcwm
 ```
 
 Gemini CLI, as an extension:
 
 ```sh
-gemini extensions install https://github.com/FrameCoreWorks/FCMW
+gemini extensions install https://github.com/FrameCoreWorks/FCWM
 ```
 
 Codex and Cursor read the manifests in `.codex-plugin/` and `.cursor-plugin/`; agents that only read

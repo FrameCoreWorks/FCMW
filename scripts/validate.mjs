@@ -130,7 +130,7 @@ if (catalog) {
 // ---------- 4. no brand in shipped files ----------
 // The repository URL is allowed (it is where the code lives); anything else is not.
 const BRANDS = [/frame\s*core/i];
-const ALLOWED_URL = /(github\.com\/)?FrameCoreWorks\/FCMW/gi;
+const ALLOWED_URL = /(github\.com\/)?FrameCoreWorks\/FCWM/gi;
 const SKIP_DIRS = new Set([".git", "node_modules", ".venv", "out"]);
 const TEXT_EXT = /\.(md|mdx|json|js|mjs|cjs|ts|py|html|css|svg|txt|ya?ml|toml|sh)$/i;
 const SELF = relative(root, fileURLToPath(import.meta.url));
