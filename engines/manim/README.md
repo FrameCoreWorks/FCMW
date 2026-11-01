@@ -11,7 +11,7 @@ libcairo2-dev pkg-config`); macOS and Windows use prebuilt wheels. LaTeX is only
 | `fcwm new <name> --engine manim` | copies `templates/manim-blank` (`scene.py`, `film.json`) |
 | `fcwm render <film> --check` | half-size draft render, ffmpeg cuts one frame per beat, tiled into contact sheets |
 | `fcwm render <film> --at 1,2` | full-size render, frames cut at those times into `render/stills/` |
-| `fcwm render <film>` | one render per format, re-encoded to H.264 yuv420p (CRF 16, faststart), preview, QA |
+| `fcwm render <film>` | one render per format, re-encoded to H.264 yuv420p (CRF 16, faststart), QA |
 | `--export mov-alpha` | `--transparent --format mov` (QuickTime Animation), transcoded to ProRes 4444 `yuva444p10le` |
 | `--export webm-alpha` | `--transparent --format webm` (VP9 with alpha), copied as is |
 

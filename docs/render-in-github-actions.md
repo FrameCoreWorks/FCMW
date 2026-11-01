@@ -34,8 +34,8 @@ What happens:
 3. FCWM creates a temporary repository `<you>/fcwm-render-<film>-<time>` (private; `--public` makes it
    public), copies the film's source into `films/<film>/` (not `render/` or `.fcwm/`), adds the
    workflow `.github/workflows/fcwm-render.yml` and pushes.
-4. It starts the workflow, shows its progress, and when it finishes downloads the MP4s, the phone
-   preview, contact sheets and `qa.json` into your film folder's `render/`.
+4. It starts the workflow, shows its progress, and when it finishes downloads the MP4s, contact
+   sheets and `qa.json` into your film folder's `render/`.
 5. It deletes the temporary repository, so nothing of the render stays on GitHub. The first time, `gh`
    asks in the browser for permission to delete repositories (`delete_repo`). If the render fails, the
    repository is kept so you can read the log, and FCWM prints `gh repo delete <you>/<name> --yes`.
@@ -71,7 +71,7 @@ node ~/.fcwm/app/scripts/fcwm.mjs run '/path/to/my-film' --cloud
 5. Run it: Actions tab > fcwm-render > Run workflow, enter the folder name (`my-film`), pick `full`
    (video) or `check` (contact sheets only), Run workflow.
 6. When the run shows a green tick, open it and download the artifact `my-film-render` (a zip with the
-   MP4s, preview, contact sheets and `qa.json`). Unzip it into your film folder's `render/`.
+   MP4s, contact sheets and `qa.json`). Unzip it into your film folder's `render/`.
 
 For the next film, repeat steps 4 to 6 in the same repository.
 

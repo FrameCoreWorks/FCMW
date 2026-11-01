@@ -11,7 +11,7 @@ exact version FCWM was tested with. Telemetry is off for every call (`HYPERFRAME
 | `fcwm new <name>` | none: copies `templates/hyperframes-blank` and FCWM's `lib/` into `<name>/lib/fcwm/` |
 | `fcwm render <film> --check` | `check` (lint, runtime, layout, contrast), then `snapshot --at <beats>`, tiled into contact sheets |
 | `fcwm render <film> --at 1,2` | `snapshot --at 1,2` into `<film>/render/stills/` |
-| `fcwm render <film>` | `render -q delivery --strict`, then FCWM's phone preview and QA |
+| `fcwm render <film>` | `render -q delivery --strict`, then FCWM's mix and QA (phone preview only with `--preview`) |
 | `--export mov-alpha` / `webm-alpha` | `render --format mov` (ProRes 4444) / `--format webm` (VP9 alpha) |
 
 The FCWM starter drives the picture through HyperFrames' `hf-seek` event (`renderAt(t)`), which is

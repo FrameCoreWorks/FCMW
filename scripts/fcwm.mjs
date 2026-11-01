@@ -3,7 +3,7 @@
 //
 //   node scripts/fcwm.mjs new <name> [--engine hyperframes|motion-reel|manim|blender] [--3d] [--score] [--pathtrace] [--format 9x16,16x9]
 //                                    [--duration 15] [--bpm 120] [--title "..."] [--alpha] [--lottie [file]] [--brand <kit>]
-//   node scripts/fcwm.mjs render <film> [--check | --at 3.2,7.5] [--format 9x16] [--export gif,webm,mov,mov-alpha,webm-alpha] [--no-qa]
+//   node scripts/fcwm.mjs render <film> [--check | --at 3.2,7.5] [--format 9x16] [--export gif,webm,mov,mov-alpha,webm-alpha] [--preview] [--no-qa]
 //   node scripts/fcwm.mjs qa <film | video.mp4> [--determinism]
 //   node scripts/fcwm.mjs run <folder> [--check] [--full] [--cloud [--public] [--repo name]]   install what is missing (--full: every engine), then render;
 //                                   --cloud: GitHub Actions in a temporary repository deleted after download
@@ -44,7 +44,7 @@ class UserError extends Error { constructor(msg, code = 1) { super(msg); this.co
 const USAGE = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 15).map((l) => l.replace(/^\/\/ ?/, '')).join('\n');
 
 export async function main(argv, { cwd = process.cwd(), log = console.log } = {}) {
-  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'pathtrace', 'alpha', 'no-qa', 'determinism', 'help', 'cloud', 'next', 'full', 'list', 'public', 'score'] });
+  const a = parseArgs(argv, { booleans: ['check', 'dry-run', '3d', 'pathtrace', 'alpha', 'no-qa', 'determinism', 'help', 'cloud', 'next', 'full', 'list', 'public', 'score', 'preview'] });
   const [cmd, target] = a._;
   if (!cmd || a.help || cmd === 'help') { log(USAGE); return 0; }
   if (cmd === 'engines') return engines(log);
@@ -163,7 +163,8 @@ async function render(target, a, cwd, log) {
     throw new UserError(`a HyperFrames film renders only in its own format (${film.formats[0]}); make another film for ${formats.join(', ')}`);
   const steps = adapter.plan(film, mode, { at: String(a.at || ''), formats });
   const kinds = mode === 'full' ? parseExports(a.export ?? film.config.exports) : [];
-  if (mode === 'full') steps.push(previewStep(film, formats[0]), ...finalSheetSteps(film, formats), ...exportSteps(film, adapter, formats, kinds));
+  // the final render only; a low-resolution phone preview only when asked for (--preview)
+  if (mode === 'full') steps.push(...(a.preview ? [previewStep(film, formats[0])] : []), ...finalSheetSteps(film, formats), ...exportSteps(film, adapter, formats, kinds));
   if (a['dry-run']) { log(describe(steps)); return 0; }
   await requireRenderTools(film, adapter);
   await runSteps(steps, { log });

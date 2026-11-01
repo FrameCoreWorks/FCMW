@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `fcwm render` goes straight to the final film; the phone preview is made only with `--preview`.
+- Loudness is measured on the delivered AAC, not the WAV: AAC adds inter-sample peaks (a real 24 s film
+  went from -1.3 to -0.8 dBTP), so the limiter ceiling drops until the delivered file holds -1 dBTP
+  (HyperFrames mix and the motion-reel mixer).
 - Beginner and expert levels next to quick and full mode: beginners get one step at a time in plain
   words and paste the Terminal output back; `fcwm run` ends with a short summary block made for that
   (each film's QA result and fixes, file paths, the error, the next step).

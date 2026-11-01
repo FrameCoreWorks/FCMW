@@ -21,7 +21,7 @@ runs.
 | New film | `node <repo>/scripts/fcwm.mjs new <film> [--format 9x16] [--duration 15] [--3d] [--score [--bpm 120]]` |
 | Lint, layout check and contact sheet | `node <repo>/scripts/fcwm.mjs render <film> --check` |
 | Stills | `node <repo>/scripts/fcwm.mjs render <film> --at 3.2,7.5` |
-| Full render, preview, QA | `node <repo>/scripts/fcwm.mjs render <film>` |
+| Full render and QA (`--preview` adds a small phone preview) | `node <repo>/scripts/fcwm.mjs render <film>` |
 | Determinism check | `node <repo>/scripts/fcwm.mjs qa <film> --determinism` |
 
 Extra formats: `fcwm render <film> --export gif,webm,mov` (or `"exports"` in film.json). For a

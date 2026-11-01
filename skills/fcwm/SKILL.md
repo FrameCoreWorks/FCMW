@@ -139,7 +139,8 @@ key in chat, and follow `<repo>/skills/connecting-services`.
    or overflow) and wrote no sheet: fix what it names and run it again. If you cannot see images, give
    the sheets to the user and ask them to score.
    `--at` takes seconds (`--at 0,2.5,7`); convert beats with `beats.json` (`offset + beat * period`).
-4. `fcwm render <film>` renders, mixes, writes `<film>-preview.mp4` and runs the automated checks:
+4. `fcwm render <film>` renders the final film straight away (no separate preview; `--preview` adds a
+   small phone copy only when the user asks), mixes, and runs the automated checks:
    -14 LUFS / -1 dBTP, constant fps, canvas size, no blank frames, and the composition checks above
    (each FAIL prints its fix). Fix composition FAILs before scoring taste. `fcwm qa <film> --determinism` also
    renders three frames twice and compares them. Report every FAIL as it is; never call a film done

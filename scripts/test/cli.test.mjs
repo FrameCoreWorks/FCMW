@@ -102,7 +102,10 @@ test('fcwm render --dry-run prints steps and runs nothing', async () => {
   assert.equal(await main(['render', 'm', '--dry-run'], { cwd: root, log: (l) => lines.push(l) }), 0);
   const out = lines.join('\n');
   assert.match(out, /picture 9x16/);
-  assert.match(out, /phone preview/);
+  assert.doesNotMatch(out, /phone preview/);  // the final render only, unless --preview
+  const withPreview = [];
+  await main(['render', 'm', '--dry-run', '--preview'], { cwd: root, log: (l) => withPreview.push(l) });
+  assert.match(withPreview.join('\n'), /phone preview/);
   assert.equal(fs.existsSync(path.join(root, 'm', 'render')), false);
 });
 

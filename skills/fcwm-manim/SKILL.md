@@ -20,7 +20,7 @@ metadata:
 | New film | `node <repo>/scripts/fcwm.mjs new <film> --engine manim [--format 16x9] [--duration 10] [--alpha]` |
 | Contact sheet (half-size draft render) | `node <repo>/scripts/fcwm.mjs render <film> --check` |
 | Stills | `node <repo>/scripts/fcwm.mjs render <film> --at 2,5.5` |
-| Full render, preview, QA | `node <repo>/scripts/fcwm.mjs render <film>` |
+| Full render and QA (`--preview` adds a small phone preview) | `node <repo>/scripts/fcwm.mjs render <film>` |
 | Extra formats | `--export gif,webm,mov,mov-alpha,webm-alpha` (alpha needs `"alpha": true`) |
 
 Unlike the browser engines, Manim films can list several formats: each is rendered on its own canvas

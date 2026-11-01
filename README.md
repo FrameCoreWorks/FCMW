@@ -109,7 +109,7 @@ Then, from any folder (Node 22+ and FFmpeg required; `uv` only for synthesized s
 node <path-to-FCWM>/scripts/fcwm.mjs new my-film              # HyperFrames, 9:16, 15 s
 node <path-to-FCWM>/scripts/fcwm.mjs new my-3d --3d --score     # three.js scene + synthesized score
 node <path-to-FCWM>/scripts/fcwm.mjs render my-film --check   # contact sheets in my-film/render/
-node <path-to-FCWM>/scripts/fcwm.mjs render my-film           # MP4, phone preview, QA report
+node <path-to-FCWM>/scripts/fcwm.mjs render my-film           # final MP4 and QA report
 ```
 
 Your agent has no terminal? It hands you one film folder and one line to paste, which installs only

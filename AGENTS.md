@@ -52,7 +52,7 @@ job to an engine:
 - **Quick mode:** idea to finished film with one review at the end.
 - **Full process:** brief, shot list, key frames, review rounds, render, delivery.
 
-Quality gate (both modes): look at a contact sheet (one frame per beat) and a phone-size preview,
+Quality gate (both modes): look at a contact sheet (one frame per beat) and its phone-size sheet,
 score hook, readability, motion quality, variety, brief fit and sound sync from 1 to 10, fix the three
 weakest spots, and repeat until every category is 8 or more. Agents that cannot see images hand the
 sheet to the user instead of scoring it themselves. Automated checks: -14 LUFS integrated and
