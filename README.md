@@ -8,9 +8,10 @@ Claude apps, Codex, ChatGPT, Cursor, Gemini CLI and others. It brings no brand a
 You set the direction; FCWM brings the workshop: engines, a production method, quality control and
 rendering.
 
-> **Status: 0.1.0, skeleton.** The structure, manifests and entry skill are in place. Engines, the
-> building block library, recipes, quality checks and the render CLI are being built. Nothing in
-> this repository renders a film yet.
+> **Status: 0.2.0.** Two engines render end to end: HyperFrames (2-D, the default) and motion-reel
+> (3-D, generative, synthesized sound), driven by one cross-platform command with automated quality
+> checks. Both engines are marked experimental. Manim, Blender, Lottie, extra export formats and the
+> brand kit come next.
 
 ## Why code
 
@@ -67,6 +68,29 @@ gemini extensions install https://github.com/FrameCoreWorks/FCWM
 
 Codex and Cursor read the manifests in `.codex-plugin/` and `.cursor-plugin/`; agents that only read
 `AGENTS.md` get the same instructions from the repository root.
+
+## Render a film
+
+The skills tell the agent what to run; rendering needs the full repository on your machine:
+
+```sh
+git clone https://github.com/FrameCoreWorks/FCWM
+cd FCWM
+npm install
+npx playwright install chromium
+node scripts/fcwm.mjs doctor
+```
+
+Then, from any folder (Node 22+ and FFmpeg required; `uv` only for motion-reel scores in Python):
+
+```sh
+node <path-to-FCWM>/scripts/fcwm.mjs new my-film              # HyperFrames, 9:16, 15 s
+node <path-to-FCWM>/scripts/fcwm.mjs new my-3d --engine motion-reel --3d
+node <path-to-FCWM>/scripts/fcwm.mjs render my-film --check   # contact sheets in my-film/render/
+node <path-to-FCWM>/scripts/fcwm.mjs render my-film           # MP4, phone preview, QA report
+```
+
+No GPU or a phone only: [render in GitHub Actions](docs/render-in-github-actions.md).
 
 ## Repository layout
 

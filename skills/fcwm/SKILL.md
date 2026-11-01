@@ -2,16 +2,17 @@
 name: fcwm
 description: Entry point for making motion graphics as code with FCWM. Use whenever the user asks for a motion graphics video, animated logo, explainer, promo or ad, social cut, lyric or music video, animated chart or diagram, title sequence, 3D product shot, transparent overlay, GIF, Lottie or animated SVG, even if they never say "motion graphics". Asks for quick mode or the full process, collects the brief, picks the engine and tells the user its licence tier before building.
 license: Apache-2.0
-compatibility: Any agent that reads Agent Skills. Rendering needs a shell with Node 18+ and FFmpeg; engines install their own extras. Agents without a shell hand the user a command to run.
+compatibility: Any agent that reads Agent Skills. Rendering needs the full FCWM repository (git clone), a shell with Node 22+ and FFmpeg; `node scripts/fcwm.mjs doctor` lists anything missing. Agents without a shell hand the user a command to run.
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # FCWM
 
 Make a film as code: the agent writes it, the user's machine or GitHub Actions renders it. This skill
-runs the conversation and the routing. Engine specifics live in the engine adapters under
-`<repo>/engines/`, where `<repo>` is the plugin root (two levels above this file).
+runs the conversation and the routing; the engine skills (`fcwm-hyperframes`, `fcwm-motion-reel`) hold
+the engine specifics. `<repo>` is the FCWM root, two levels above this file. Every command below is
+`node <repo>/scripts/fcwm.mjs ...` (shortened to `fcwm ...`), run from the folder that holds the films.
 
 The user sets the creative direction. Never add a brand, palette, typeface or style the user did not
 ask for. If the brief is silent on look, ask, or offer two or three neutral options and let them pick.
@@ -22,56 +23,69 @@ Ask once, at the start:
 
 - **Quick mode**: idea to finished film. Confirm the one-line idea, format and length, then build,
   run the quality gate and deliver. One review, at the end.
-- **Full process**: brief, shot list on the beat grid (user signs off), key frames (user signs off),
-  build, review rounds, render, delivery in every requested format.
+- **Full process**: brief, shot list on the beat grid (user signs off), key frames from
+  `fcwm render <film> --at ...` (user signs off), build, review rounds, render, delivery in every
+  requested format.
 
 If the user does not choose, use quick mode for films up to 15 seconds and the full process above that.
 
 ## 2. Collect the brief
 
-Ask only for what is missing:
+Ask only for what is missing, in one round:
 
 | Item | Default when the user has no preference |
 | --- | --- |
 | The idea in one sentence | none, always ask |
 | Duration | 15 s |
-| Aspect ratios | 16:9; every extra ratio gets its own composition, not a crop |
-| Output formats | MP4 (H.264); on request ProRes 4444 or WebM with alpha, GIF, Lottie, animated SVG |
+| Aspect ratios | 9:16; every extra ratio gets its own composition, not a crop |
+| Output formats | MP4 (H.264) |
 | Look and tone | ask; never invent one |
 | Brand kit | none; use `brand-kit/` only if the user has saved one or provides assets |
-| Sound | synthesized score and effects on the beat grid, or the user's own track; or silent |
+| Sound | the user's own track, a synthesized score and effects on the beat grid, or silent |
 | Paid tools | not used unless the user agrees and connects their own account; see `<repo>/skills/connecting-services` |
 
 ## 3. Pick the engine
 
-Read `<repo>/engines/catalog.json`. Match the job to an engine by its `purpose`, then check `status`:
-only engines marked `ready` can be used. Before building, tell the user the engine, its `tier`
-(`free`, `restricted` or `paid`) and, for anything other than `free`, the licence limit in one line.
+`fcwm engines` prints `<repo>/engines/catalog.json`: each engine's purpose, tier, status and licence.
+Use only engines with status `ready` or `experimental` (say "experimental" out loud). Before building,
+tell the user the engine and its tier; for anything other than `free`, add the licence limit in one line.
 
-Typical routing (the catalog is the source of truth):
+| Job | Engine | Tier |
+| --- | --- | --- |
+| 2-D type, UI and product stories, captions, layouts, slides, web-style motion (default) | HyperFrames | free (GSAP inside a film: restricted) |
+| 3-D scenes, point clouds, voxel characters, generative motion, synthesized score, music and lyric videos | motion-reel | free |
+| Equations and technical diagrams, physical simulation, Lottie or animated SVG | Manim, Blender, Lottie (planned) | say they are not available yet; offer the closest engine above |
 
-| Job | Engine |
-| --- | --- |
-| Kinetic type, UI and product motion, 2D and three.js 3D with synthesized sound | motion-reel |
-| HTML and CSS layouts, web-style motion, captions | HyperFrames |
-| Equations, graphs, mathematical and technical diagrams | Manim |
-| Physical simulation, photoreal 3D, complex scenes | Blender |
-| Lightweight vector animation for web and apps | Lottie / animated SVG |
+When a job fits both (for example 2-D kinetic type with a synthesized score), offer both with one line
+each and recommend one. Then load the engine skill and follow it:
 
-If no `ready` engine fits, say so plainly and name the closest option. Do not fake a capability.
+- HyperFrames: `fcwm new <film>` and `skills/fcwm-hyperframes/SKILL.md`
+- motion-reel: `fcwm new <film> --engine motion-reel` (`--3d` for three.js) and `skills/fcwm-motion-reel/SKILL.md`
+
+## Paid APIs and MCP servers
+
+FCWM ships nothing that needs an account or bills money. Optional services (voice, music, images,
+video, as an API or an MCP server) are listed in `<repo>/integrations/catalog.json`, almost all
+`tier: "paid"`. Offer one only when the user wants it, say it bills their own account, never ask for a
+key in chat, and follow `<repo>/skills/connecting-services`.
 
 ## 4. Build, check, deliver
 
-1. Follow the engine adapter's own instructions and the render contract in `<repo>/AGENTS.md`:
-   every frame is a pure function of time, randomness only from seeded noise.
-2. Build from the building blocks in `<repo>/lib/` and the annotated films in `<repo>/recipes/`
-   before writing anything from scratch.
-3. Quality gate, both modes: contact sheet (one frame per beat) and a phone-size preview. Score hook,
-   readability, motion quality, variety, brief fit and sound sync from 1 to 10. Fix the three weakest
-   spots and repeat until every score is 8 or more. If you cannot see images, give the sheet to the
-   user and ask them to score it.
-4. Run the automated checks in `<repo>/qa/` (loudness -14 LUFS / -1 dBTP, constant fps, safe zone,
-   blank frames, determinism) and report any failure as it is.
-5. Deliver every requested format, give the full output paths, and state what was not checked.
+1. Follow the engine skill and the render contract in `<repo>/AGENTS.md`: every frame is a pure function
+   of time, randomness only from seeded noise.
+2. Build from the blocks in `<repo>/lib/`, the craft rules in the `directing-motion-films` skill and the
+   annotated films in `<repo>/recipes/` before writing anything from scratch.
+3. Quality gate, both modes: `fcwm render <film> --check` writes the contact sheet (one frame per beat)
+   and a phone-size sheet into `<film>/render/`. Score hook, readability, motion quality, variety, brief
+   fit and sound sync from 1 to 10. Fix the three weakest spots and repeat until every score is 8 or
+   more. If you cannot see images, give the sheets to the user and ask them to score.
+4. `fcwm render <film>` renders, mixes, writes `<film>-preview.mp4` and runs the automated checks:
+   -14 LUFS / -1 dBTP, constant fps, canvas size, no blank frames. `fcwm qa <film> --determinism` also
+   renders three frames twice and compares them. Report every FAIL as it is; never call a film done
+   while QA fails.
+5. Deliver: full paths of the files in `<film>/render/`, the last scores, and what was not checked
+   (for example the safe zone, which is still a manual check).
 
-Without a shell, finish with the exact command the user should paste into their terminal.
+Without a shell, finish with the exact commands the user should paste, starting with
+`git clone https://github.com/FrameCoreWorks/FCWM && cd FCWM && npm install && npx playwright install chromium`.
+Rendering in the cloud instead: `<repo>/docs/render-in-github-actions.md`.

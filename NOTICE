@@ -5,3 +5,12 @@ This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 
 Third-party components keep their own licences. Each one is listed below with
 its upstream and licence file when it is added to the repository.
+
+engines/motion-reel/
+  motion-reel 1.3.0 by Aries Spring, https://github.com/Aries-Spring/motion-reel
+  MIT License, see engines/motion-reel/LICENSE.
+  Changes: adapter.mjs and README.md added by FCWM; upstream files otherwise unchanged
+  unless noted at the top of the file.
+
+qa/audit-zfight.mjs
+  Coplanar-face audit from the same starter pack, MIT License (see engines/motion-reel/LICENSE).

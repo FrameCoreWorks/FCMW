@@ -6,6 +6,7 @@
 // 3. engines/catalog.json entries are complete and use a known tier and status.
 // 4. integrations/catalog.json entries (optional services) are complete and never carry a key.
 // 5. No brand name and nothing that looks like an API key appears in shipped files.
+// 6. Copies in skills/*/references/ match their sources (scripts/sync-skill-refs.mjs).
 
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -124,7 +125,7 @@ if (catalog) {
     if (e.checked && !/^\d{4}-\d{2}-\d{2}$/.test(e.checked)) fail(where, `checked must be YYYY-MM-DD`);
     if (e.id && ids.has(e.id)) fail(where, "duplicate id");
     ids.add(e.id);
-    if (e.status === "ready" && !existsSync(join(root, "engines", e.id))) fail(where, `status is ready but engines/${e.id}/ does not exist`);
+    if ((e.status === "ready" || e.status === "experimental") && !existsSync(join(root, "engines", e.id))) fail(where, `status is ${e.status} but engines/${e.id}/ does not exist`);
   }
 }
 
@@ -188,6 +189,10 @@ function walk(dir) {
 walk(root);
 
 // ---------- report ----------
+// ---------- 6. skill reference copies ----------
+const { drift } = await import("./sync-skill-refs.mjs");
+for (const rel of drift()) fail(rel, "out of date with its source: run node scripts/sync-skill-refs.mjs");
+
 if (errors.length) {
   console.error(`validate: ${errors.length} problem(s)\n` + errors.map((e) => `  - ${e}`).join("\n"));
   process.exit(1);

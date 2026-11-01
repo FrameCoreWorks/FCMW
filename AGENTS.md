@@ -7,8 +7,8 @@ FCWM is an open motion graphics toolkit. An agent writes a film as code (2D, 3D 
 user's machine or GitHub Actions renders it. No AI model runs at render time: the computer replays the
 code frame by frame, so the quality of the film is the quality of the code the agent writes.
 
-> Status: 0.1.0 skeleton. The layout, manifests and the entry skill exist; engines, the building block
-> library, recipes and quality checks are being added step by step. Check a directory's `README.md`
+> Status: 0.2.0. HyperFrames and motion-reel render end to end through `scripts/fcwm.mjs` (both
+> experimental); Manim, Blender, Lottie and the brand kit are planned. Check a directory's `README.md`
 > before relying on it, and never claim a feature works until it has been run.
 
 ## Ground rules
